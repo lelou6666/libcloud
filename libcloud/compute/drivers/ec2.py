@@ -662,10 +662,13 @@ class BaseEC2NodeDriver(NodeDriver):
                                        namespace=NAMESPACE)]
             nodes += self._to_nodes(rs, 'instancesSet/item', groups)
 
+        """
+        # Disabled for compatibility with OpenStack Alamo
         nodes_elastic_ips_mappings = self.ex_describe_addresses(nodes)
         for node in nodes:
             ips = nodes_elastic_ips_mappings[node.id]
             node.public_ips.extend(ips)
+        """
         return nodes
 
     def list_sizes(self, location=None):
