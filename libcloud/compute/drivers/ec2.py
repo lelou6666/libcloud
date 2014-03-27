@@ -1641,7 +1641,7 @@ class BaseEC2NodeDriver(NodeDriver):
             else:
                 params['IamInstanceProfile.Name'] = kwargs['ex_iamprofile']
 
-        object = self.connection.request(self.path, params=params).object
+        object = self.connection.request(self.path, method='POST', data=params).object
         nodes = self._to_nodes(object, 'instancesSet/item')
 
         for node in nodes:

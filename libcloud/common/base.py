@@ -555,7 +555,13 @@ class Connection(object):
         self.method = method
 
         # Extend default parameters
-        params = self.add_default_params(params)
+        if method == 'POST':
+            self.add_default_params(data)
+            data = urlencode(data, doseq=True)
+            headers['Content-Type'] = 'application/x-www-form-urlencoded'
+        else:
+            params = self.add_default_params(params)
+
 
         # Extend default headers
         headers = self.add_default_headers(headers)

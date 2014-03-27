@@ -132,7 +132,7 @@ class SignedAWSConnection(ConnectionUserAndKey):
            (not self.secure and self.port != 80):
             hostname += ":" + str(self.port)
 
-        string_to_sign = '\n'.join(('GET', hostname, path, qs))
+        string_to_sign = '\n'.join((self.method, hostname, path, qs))
 
         b64_hmac = base64.b64encode(
             hmac.new(b(secret_key), b(string_to_sign),
