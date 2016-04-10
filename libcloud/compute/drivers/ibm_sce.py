@@ -26,6 +26,7 @@ import base64
 import time
 
 from libcloud.utils.py3 import urlencode
+from libcloud.utils.py3 import httplib
 from libcloud.utils.py3 import b
 
 from libcloud.common.base import XmlResponse, ConnectionUserAndKey
@@ -84,8 +85,14 @@ class IBMNodeLocation(NodeLocation):
 
     def __repr__(self):
         return ('<IBMNodeLocation: id=%s, name=%s, country=%s, '
+<<<<<<< HEAD
                 'driver=%s, extra=%s>' % self.id, self.name, self.country,
                 self.driver.name, self.extra)
+=======
+                'driver=%s, extra=%s>' %
+                (self.id, self.name, self.country, self.driver.name,
+                 self.extra))
+>>>>>>> refs/remotes/nimbusproject/trunk
 
 
 class VolumeState(object):
@@ -123,13 +130,22 @@ class VolumeOffering(object):
 
     def __repr__(self):
         return ('<VolumeOffering: id=%s, location=%s, name=%s, extra=%s>' %
+<<<<<<< HEAD
                  self.id, self.location, self.name, self.extra)
+=======
+                (self.id, self.location, self.name, self.extra))
+>>>>>>> refs/remotes/nimbusproject/trunk
 
 
 class Address(object):
     """
     A reserved IP address that can be attached to an instance.
+<<<<<<< HEAD
     Properties: id, ip, state, options(location, type, created_time, state, hostname, instance_ids, vlan, owner,
+=======
+    Properties: id, ip, state, options(location, type, created_time, state,
+     hostname, instance_ids, vlan, owner,
+>>>>>>> refs/remotes/nimbusproject/trunk
     mode, offering_id)
     """
     def __init__(self, id, ip, state, options):
@@ -140,7 +156,12 @@ class Address(object):
 
     def __repr__(self):
         return ('<Address: id=%s, ip=%s, state=%s, options=%s>' %
+<<<<<<< HEAD
                  self.id, self.ip, self.state, self.options)
+=======
+                (self.id, self.ip, self.state, self.options))
+
+>>>>>>> refs/remotes/nimbusproject/trunk
 
 class IBMNodeDriver(NodeDriver):
     """
@@ -173,24 +194,29 @@ class IBMNodeDriver(NodeDriver):
     def create_node(self, **kwargs):
         """
         Creates a node in the IBM SmartCloud Enterprise.
+<<<<<<< HEAD
 
         See L{NodeDriver.create_node} for more keyword args.
+=======
+>>>>>>> refs/remotes/nimbusproject/trunk
 
-        @inherits: L{NodeDriver.create_node}
+        See :class:`NodeDriver.create_node` for more keyword args.
 
-        @keyword    auth: Name of the pubkey to use. When constructing
-            C{NodeAuthSSHKey} instance, 'pubkey' argument must be the name of
-            the public key to use. You chose this name when creating
+        @inherits: :class:`NodeDriver.create_node`
+
+        :keyword    auth: Name of the pubkey to use. When constructing
+            :class:`NodeAuthSSHKey` instance, 'pubkey' argument must be the
+            name of the public key to use. You chose this name when creating
             a new public key on the IBM server.
-        @type       auth: L{NodeAuthSSHKey}
+        :type       auth: :class:`NodeAuthSSHKey`
 
-        @keyword    ex_configurationData: Image-specific configuration
+        :keyword    ex_configurationData: Image-specific configuration
             parameters. Configuration parameters are defined in the parameters
             .xml file.  The URL to this file is defined in the NodeImage at
             extra[parametersURL].
             Note: This argument must be specified when launching a Windows
             instance. It must contain 'UserName' and 'Password' keys.
-        @type       ex_configurationData: C{dict}
+        :type       ex_configurationData: ``dict``
         """
 
         # Compose headers for message body
@@ -222,6 +248,7 @@ class IBMNodeDriver(NodeDriver):
         """
         Create a new block storage volume (virtual disk)
 
+<<<<<<< HEAD
         @param      size: Size of volume in gigabytes (required).
                           Find out the possible sizes from the
                           offerings/storage REST interface
@@ -263,6 +290,50 @@ class IBMNodeDriver(NodeDriver):
         @type       kwargs.target_location_id:  C{str}
 
         @return: The newly created L{StorageVolume}.
+=======
+        :param      size: Size of volume in gigabytes (required).
+                          Find out the possible sizes from the
+                          offerings/storage REST interface
+        :type       size: ``int``
+
+        :keyword    name: Name of the volume to be created (required)
+        :type       name: ``str``
+
+        :keyword    location: Which data center to create a volume in. If
+                              empty, it will fail for IBM SmartCloud Enterprise
+                              (required)
+        :type       location: :class:`NodeLocation`
+
+        :keyword    snapshot:  Not supported for IBM SmartCloud Enterprise
+        :type       snapshot:  ``str``
+
+        :keyword    kwargs.format:  Either RAW or EXT3 for IBM SmartCloud
+                                    Enterprise (optional)
+        :type       kwargs.format:  ``str``
+
+        :keyword    kwargs.offering_id:  The storage offering ID for IBM
+                                         SmartCloud Enterprise
+                                         Find this from the REST interface
+                                         storage/offerings. (optional)
+        :type       kwargs.offering_id:  ``str``
+
+        :keyword    kwargs.source_disk_id:  If cloning a volume, the storage
+                                            disk to make a copy from (optional)
+        :type       kwargs.source_disk_id:  ``str``
+
+        :keyword    kwargs.storage_area_id:  The id of the storage availability
+                                             area to create the volume in
+                                             (optional)
+        :type       kwargs.storage_area_id:  ``str``
+
+        :keyword    kwargs.target_location_id:  If cloning a volume, the
+                                                storage disk to make a copy
+                                                from (optional)
+        :type       kwargs.target_location_id:  ``str``
+
+        :return: The newly created :class:`StorageVolume`.
+        :rtype: :class:`StorageVolume`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         data = {}
         data.update({'name': name})
@@ -272,14 +343,24 @@ class IBMNodeDriver(NodeDriver):
             data.update({'format': kwargs['format']})
         if (('offering_id' in kwargs) and (kwargs['offering_id'] is not None)):
             data.update({'offeringID': kwargs['offering_id']})
+<<<<<<< HEAD
         if (('storage_area_id' in kwargs) and (kwargs['storage_area_id'] is not None)):
+=======
+        if (('storage_area_id' in kwargs) and
+                (kwargs['storage_area_id'] is not None)):
+>>>>>>> refs/remotes/nimbusproject/trunk
             data.update({'storageAreaID': kwargs['storage_area_id']})
         if 'source_disk_id' in kwargs:
             data.update({'sourceDiskID': kwargs['source_disk_id']})
             data.update({'type': 'clone'})
         if 'target_location_id' in kwargs:
             data.update({'targetLocationID': kwargs['target_location_id']})
+<<<<<<< HEAD
         resp = self.connection.request(action=REST_BASE + '/storage',
+=======
+        resp = self.connection.request(
+            action=REST_BASE + '/storage',
+>>>>>>> refs/remotes/nimbusproject/trunk
             headers={'Content-Type': 'application/x-www-form-urlencoded'},
             method='POST',
             data=data).object
@@ -289,6 +370,7 @@ class IBMNodeDriver(NodeDriver):
         """
         Create a new node image from an existing volume or image.
 
+<<<<<<< HEAD
         @param      name: Name of the image to be created (required)
         @type       name: C{str}
 
@@ -302,6 +384,23 @@ class IBMNodeDriver(NodeDriver):
         @type       kwargs.volume_id:  C{str}
 
         @return: The newly created L{NodeImage}.
+=======
+        :param      name: Name of the image to be created (required)
+        :type       name: ``str``
+
+        :param      description: Description of the image to be created
+        :type       description: ``str``
+
+        :keyword    image_id:  The ID of the source image if cloning the image
+        :type       image_id:  ``str``
+
+        :keyword    volume_id:  The ID of the storage volume if
+                                importing the image
+        :type       volume_id:  ``str``
+
+        :return: The newly created :class:`NodeImage`.
+        :rtype: :class:`NodeImage`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         data = {}
         data.update({'name': name})
@@ -311,7 +410,12 @@ class IBMNodeDriver(NodeDriver):
             data.update({'imageId': kwargs['image_id']})
         if (('volume_id' in kwargs) and (kwargs['volume_id'] is not None)):
             data.update({'volumeId': kwargs['volume_id']})
+<<<<<<< HEAD
         resp = self.connection.request(action=REST_BASE + '/offerings/image',
+=======
+        resp = self.connection.request(
+            action=REST_BASE + '/offerings/image',
+>>>>>>> refs/remotes/nimbusproject/trunk
             headers={'Content-Type': 'application/x-www-form-urlencoded'},
             method='POST',
             data=data).object
@@ -321,8 +425,38 @@ class IBMNodeDriver(NodeDriver):
         url = REST_BASE + '/instances/%s' % (node.id)
         status = int(self.connection.request(action=url,
                                              method='DELETE').status)
+        return status == httplib.OK
+
+    def destroy_volume(self, volume):
+        """
+        Destroys a storage volume.
+
+        :param      volume: Volume to be destroyed
+        :type       volume: :class:`StorageVolume`
+
+        :rtype: ``bool``
+        """
+        url = REST_BASE + '/storage/%s' % (volume.id)
+        status = int(self.connection.request(action=url,
+                                             method='DELETE').status)
+        return status == httplib.OK
+
+    def ex_destroy_image(self, image):
+        """
+        Destroys an image.
+
+        :param      image: Image to be destroyed
+        :type       image: :class:`NodeImage`
+
+        :return: ``bool``
+        """
+
+        url = REST_BASE + '/offerings/image/%s' % (image.id)
+        status = int(self.connection.request(action=url,
+                                             method='DELETE').status)
         return status == 200
 
+<<<<<<< HEAD
     def destroy_volume(self, volume):
         """
         Destroys a storage volume.
@@ -337,10 +471,13 @@ class IBMNodeDriver(NodeDriver):
                                              method='DELETE').status)
         return status == 200
 
+=======
+>>>>>>> refs/remotes/nimbusproject/trunk
     def attach_volume(self, node, volume):
         """
         Attaches volume to node.
 
+<<<<<<< HEAD
         @param      node: Node to attach volume to
         @type       node: L{Node}
 
@@ -348,6 +485,15 @@ class IBMNodeDriver(NodeDriver):
         @type       volume: L{StorageVolume}
 
         @return: C{bool}
+=======
+        :param      node: Node to attach volume to
+        :type       node: :class:`Node`
+
+        :param      volume: Volume to attach
+        :type       volume: :class:`StorageVolume`
+
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         url = REST_BASE + '/instances/%s' % (node.id)
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
@@ -362,10 +508,20 @@ class IBMNodeDriver(NodeDriver):
         """
         Detaches a volume from a node.
 
+<<<<<<< HEAD
         @param      volume: Volume to be detached
         @type       volume: L{StorageVolume}
 
         @returns C{bool}
+=======
+        :param      node: Node which should be used
+        :type       node: :class:`Node`
+
+        :param      volume: Volume to be detached
+        :type       volume: :class:`StorageVolume`
+
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         url = REST_BASE + '/instances/%s' % (node.id)
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
@@ -399,19 +555,30 @@ class IBMNodeDriver(NodeDriver):
         """
         List storage volumes.
 
+<<<<<<< HEAD
         @return: C{list} of L{StorageVolume} objects
+=======
+        :rtype: ``list`` of :class:`StorageVolume`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         return self._to_volumes(
             self.connection.request(REST_BASE + '/storage').object)
 
     def list_sizes(self, location=None):
         """
+<<<<<<< HEAD
         Returns a generic list of sizes.  See list_images() for a list of supported
         sizes for specific images.  In particular, you need to have a size that
         matches the architecture (32-bit vs 64-bit) of the virtual machine image
         operating system.
+=======
+        Returns a generic list of sizes.  See list_images() for a list of
+        supported sizes for specific images.  In particular, you need to have
+        a size that matches the architecture (32-bit vs 64-bit) of the virtual
+        machine image operating system.
+>>>>>>> refs/remotes/nimbusproject/trunk
 
-        @inherits: L{NodeDriver.list_sizes}
+        @inherits: :class:`NodeDriver.list_sizes`
         """
         return [
             NodeSize('BRZ32.1/2048/60*175', 'Bronze 32 bit', None, None, None,
@@ -443,6 +610,11 @@ class IBMNodeDriver(NodeDriver):
     def ex_list_storage_offerings(self):
         """
         List the storage center offerings
+<<<<<<< HEAD
+=======
+
+        :rtype: ``list`` of :class:`VolumeOffering`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         return self._to_volume_offerings(
             self.connection.request(REST_BASE + '/offerings/storage').object)
@@ -451,6 +623,7 @@ class IBMNodeDriver(NodeDriver):
         """
         Allocate a new reserved IP address
 
+<<<<<<< HEAD
         @param      location_id: Target data center
         @type       location_id: L{str}
         @param      offering_id: Offering ID for address to create
@@ -458,6 +631,19 @@ class IBMNodeDriver(NodeDriver):
         @param      vlan_id: ID of target VLAN
         @type       vlan_id: L{str}
         @return:    L{Address} object
+=======
+        :param      location_id: Target data center
+        :type       location_id: ``str``
+
+        :param      offering_id: Offering ID for address to create
+        :type       offering_id: ``str``
+
+        :param      vlan_id: ID of target VLAN
+        :type       vlan_id: ``str``
+
+        :return: :class:`Address` object
+        :rtype: :class:`Address`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         url = REST_BASE + '/addresses'
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
@@ -474,8 +660,16 @@ class IBMNodeDriver(NodeDriver):
         """
         List the reserved IP addresses
 
+<<<<<<< HEAD
         @param      resource_id: If this is supplied only a single address will be returned (optional)
         @type       resource_id: L{str}
+=======
+        :param      resource_id: If this is supplied only a single address will
+         be returned (optional)
+        :type       resource_id: ``str``
+
+        :rtype: ``list`` of :class:`Address`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         url = REST_BASE + '/addresses'
         if resource_id:
@@ -486,6 +680,7 @@ class IBMNodeDriver(NodeDriver):
         """
         Copies a node image to a storage volume
 
+<<<<<<< HEAD
         @param      image: source image to copy
         @type       image: L{NodeImage}
 
@@ -493,6 +688,16 @@ class IBMNodeDriver(NodeDriver):
         @type       volume: L{StorageVolume}
 
         @return: C{bool} The success of the operation
+=======
+        :param      image: source image to copy
+        :type       image: :class:`NodeImage`
+
+        :param      volume: Target storage volume to copy to
+        :type       volume: :class:`StorageVolume`
+
+        :return: ``bool`` The success of the operation
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         url = REST_BASE + '/storage/%s' % (volume.id)
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
@@ -507,8 +712,15 @@ class IBMNodeDriver(NodeDriver):
         """
         Delete a reserved IP address
 
+<<<<<<< HEAD
         @param      resource_id: The address to delete (required)
         @type       resource_id: L{str}
+=======
+        :param      resource_id: The address to delete (required)
+        :type       resource_id: ``str``
+
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         url = REST_BASE + '/addresses/' + resource_id
         status = int(self.connection.request(action=url,
@@ -520,6 +732,7 @@ class IBMNodeDriver(NodeDriver):
         """
         Block until storage volume state changes to the given value
 
+<<<<<<< HEAD
         @param      volume: Storage volume.
         @type       node: C{StorageVolume}
 
@@ -535,6 +748,23 @@ class IBMNodeDriver(NodeDriver):
         @type       timeout: C{int}
 
         @return: C{StorageVolume}
+=======
+        :param      volume: Storage volume.
+        :type       volume: :class:`StorageVolume`
+
+        :param      state: The target state to wait for
+        :type       state: ``int``
+
+        :param      wait_period: How many seconds to between each loop
+                                 iteration (default is 3)
+        :type       wait_period: ``int``
+
+        :param      timeout: How many seconds to wait before timing out
+                             (default is 1200)
+        :type       timeout: ``int``
+
+        :rtype: :class:`StorageVolume`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         start = time.time()
         end = start + timeout
@@ -573,7 +803,12 @@ class IBMNodeDriver(NodeDriver):
         )
 
     def _to_images(self, object):
+<<<<<<< HEAD
         # Converts data retrieved from SCE /offerings/image REST call to a NodeImage
+=======
+        # Converts data retrieved from SCE /offerings/image REST call to
+        # a NodeImage
+>>>>>>> refs/remotes/nimbusproject/trunk
         return [self._to_image(image) for image in object.findall('Image')]
 
     def _to_image(self, image):
@@ -602,6 +837,10 @@ class IBMNodeDriver(NodeDriver):
                              'platform': platform,
                              'description': description,
                              'documentation': documentation,
+<<<<<<< HEAD
+=======
+                             'instanceTypes': instanceTypes,
+>>>>>>> refs/remotes/nimbusproject/trunk
                              'node_sizes': nodeSizes
                          }
                          )
@@ -662,12 +901,21 @@ class IBMNodeDriver(NodeDriver):
     def _to_volume(self, object):
         # Converts an SCE Volume to a Libcloud StorageVolume
         extra = {'state': object.findtext('State'),
+<<<<<<< HEAD
                 'location': object.findtext('Location'),
                 'instanceID': object.findtext('instanceID'),
                 'owner': object.findtext('Owner'),
                 'format': object.findtext('Format'),
                 'createdTime': object.findtext('CreatedTime'),
                 'storageAreaID': object.findtext('StorageArea/ID')}
+=======
+                 'location': object.findtext('Location'),
+                 'instanceID': object.findtext('instanceID'),
+                 'owner': object.findtext('Owner'),
+                 'format': object.findtext('Format'),
+                 'createdTime': object.findtext('CreatedTime'),
+                 'storageAreaID': object.findtext('StorageArea/ID')}
+>>>>>>> refs/remotes/nimbusproject/trunk
         return StorageVolume(object.findtext('ID'),
                              object.findtext('Name'),
                              object.findtext('Size'),
@@ -682,9 +930,15 @@ class IBMNodeDriver(NodeDriver):
         # Converts an SCE DescribeVolumeOfferingsResponse/Offerings XML object
         # to an SCE VolumeOffering
         extra = {'label': object.findtext('Label'),
+<<<<<<< HEAD
                 'supported_sizes': object.findtext('SupportedSizes'),
                 'formats': object.findall('SupportedFormats/Format/ID'),
                 'price': object.findall('Price')}
+=======
+                 'supported_sizes': object.findtext('SupportedSizes'),
+                 'formats': object.findall('SupportedFormats/Format/ID'),
+                 'price': object.findall('Price')}
+>>>>>>> refs/remotes/nimbusproject/trunk
         return VolumeOffering(object.findtext('ID'),
                               object.findtext('Name'),
                               object.findtext('Location'),
@@ -700,6 +954,7 @@ class IBMNodeDriver(NodeDriver):
         # Converts an SCE DescribeAddressesResponse/Address XML object to
         # an Address object
         extra = {'location': object.findtext('Location'),
+<<<<<<< HEAD
                 'type': object.findtext('Label'),
                 'created_time': object.findtext('SupportedSizes'),
                 'hostname': object.findtext('Hostname'),
@@ -708,6 +963,16 @@ class IBMNodeDriver(NodeDriver):
                 'owner': object.findtext('owner'),
                 'mode': object.findtext('Mode'),
                 'offering_id': object.findtext('OfferingID')}
+=======
+                 'type': object.findtext('Label'),
+                 'created_time': object.findtext('SupportedSizes'),
+                 'hostname': object.findtext('Hostname'),
+                 'instance_ids': object.findtext('InstanceID'),
+                 'vlan': object.findtext('VLAN'),
+                 'owner': object.findtext('owner'),
+                 'mode': object.findtext('Mode'),
+                 'offering_id': object.findtext('OfferingID')}
+>>>>>>> refs/remotes/nimbusproject/trunk
         return Address(object.findtext('ID'),
                        object.findtext('IP'),
                        object.findtext('State'),

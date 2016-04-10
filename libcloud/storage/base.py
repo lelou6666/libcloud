@@ -44,6 +44,7 @@ class Object(object):
     def __init__(self, name, size, hash, extra, meta_data, container,
                  driver):
         """
+<<<<<<< HEAD
         @param name: Object name (must be unique per container).
         @type  name: C{str}
 
@@ -64,6 +65,28 @@ class Object(object):
 
         @param driver: StorageDriver instance.
         @type  driver: L{StorageDriver}
+=======
+        :param name: Object name (must be unique per container).
+        :type  name: ``str``
+
+        :param size: Object size in bytes.
+        :type  size: ``int``
+
+        :param hash Object hash.
+        :type  hash: ``str``
+
+        :param container: Object container.
+        :type  container: :class:`Container`
+
+        :param extra: Extra attributes.
+        :type  extra: ``dict``
+
+        :param meta_data: Optional object meta data.
+        :type  meta_data: ``dict``
+
+        :param driver: StorageDriver instance.
+        :type  driver: :class:`StorageDriver`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         self.name = name
@@ -104,6 +127,7 @@ class Container(object):
 
     def __init__(self, name, extra, driver):
         """
+<<<<<<< HEAD
         @param name: Container name (must be unique).
         @type name: C{str}
 
@@ -112,11 +136,24 @@ class Container(object):
 
         @param driver: StorageDriver instance.
         @type driver: L{StorageDriver}
+=======
+        :param name: Container name (must be unique).
+        :type name: ``str``
+
+        :param extra: Extra attributes.
+        :type extra: ``dict``
+
+        :param driver: StorageDriver instance.
+        :type driver: :class:`StorageDriver`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         self.name = name
         self.extra = extra or {}
         self.driver = driver
+
+    def iterate_objects(self):
+        return self.driver.iterate_container_objects(container=self)
 
     def list_objects(self):
         return self.driver.list_container_objects(container=self)
@@ -131,13 +168,14 @@ class Container(object):
         return self.driver.get_object(container_name=self.name,
                                       object_name=object_name)
 
-    def upload_object(self, file_path, object_name, extra=None):
+    def upload_object(self, file_path, object_name, extra=None, **kwargs):
         return self.driver.upload_object(
-            file_path, self, object_name, extra)
+            file_path, self, object_name, extra=extra, **kwargs)
 
-    def upload_object_via_stream(self, iterator, object_name, extra=None):
+    def upload_object_via_stream(self, iterator, object_name, extra=None,
+                                 **kwargs):
         return self.driver.upload_object_via_stream(
-            iterator, self, object_name, extra)
+            iterator, self, object_name, extra=extra, **kwargs)
 
     def download_object(self, obj, destination_path, overwrite_existing=False,
                         delete_on_failure=True):
@@ -174,39 +212,84 @@ class StorageDriver(BaseDriver):
         super(StorageDriver, self).__init__(key=key, secret=secret,
                                             secure=secure, host=host,
                                             port=port, **kwargs)
+<<<<<<< HEAD
+=======
+
+    def iterate_containers(self):
+        """
+        Return a generator of containers for the given account
+
+        :return: A generator of Container instances.
+        :rtype: ``generator`` of :class:`Container`
+        """
+        raise NotImplementedError(
+            'iterate_containers not implemented for this driver')
+>>>>>>> refs/remotes/nimbusproject/trunk
 
     def list_containers(self):
         """
         Return a list of containers.
 
+<<<<<<< HEAD
         @return: A list of Container instances.
         @rtype: C{list} of L{Container}
+=======
+        :return: A list of Container instances.
+        :rtype: ``list`` of :class:`Container`
+        """
+        return list(self.iterate_containers())
+
+    def iterate_container_objects(self, container):
+        """
+        Return a generator of objects for the given container.
+
+        :param container: Container instance
+        :type container: :class:`Container`
+
+        :return: A generator of Object instances.
+        :rtype: ``generator`` of :class:`Object`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
-            'list_containers not implemented for this driver')
+            'iterate_container_objects not implemented for this driver')
 
     def list_container_objects(self, container):
         """
         Return a list of objects for the given container.
 
+<<<<<<< HEAD
         @param container: Container instance
         @type container: L{Container}
 
         @return: A list of Object instances.
         @rtype: C{list} of L{Object}
+=======
+        :param container: Container instance.
+        :type container: :class:`Container`
+
+        :return: A list of Object instances.
+        :rtype: ``list`` of :class:`Object`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
-        raise NotImplementedError(
-            'list_objects not implemented for this driver')
+        return list(self.iterate_container_objects(container))
 
     def get_container(self, container_name):
         """
         Return a container instance.
 
+<<<<<<< HEAD
         @param container_name: Container name.
         @type container_name: C{str}
 
         @return: L{Container} instance.
         @rtype: L{Container}
+=======
+        :param container_name: Container name.
+        :type container_name: ``str``
+
+        :return: :class:`Container` instance.
+        :rtype: :class:`Container`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'get_object not implemented for this driver')
@@ -215,11 +298,19 @@ class StorageDriver(BaseDriver):
         """
         Return a container CDN URL.
 
+<<<<<<< HEAD
         @param container: Container instance
         @type  container: L{Container}
 
         @return: A CDN URL for this container.
         @rtype: C{str}
+=======
+        :param container: Container instance
+        :type  container: :class:`Container`
+
+        :return: A CDN URL for this container.
+        :rtype: ``str``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'get_container_cdn_url not implemented for this driver')
@@ -228,6 +319,7 @@ class StorageDriver(BaseDriver):
         """
         Return an object instance.
 
+<<<<<<< HEAD
         @param container_name: Container name.
         @type  container_name: C{str}
 
@@ -236,6 +328,16 @@ class StorageDriver(BaseDriver):
 
         @return: L{Object} instance.
         @rtype: L{Object}
+=======
+        :param container_name: Container name.
+        :type  container_name: ``str``
+
+        :param object_name: Object name.
+        :type  object_name: ``str``
+
+        :return: :class:`Object` instance.
+        :rtype: :class:`Object`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'get_object not implemented for this driver')
@@ -244,11 +346,19 @@ class StorageDriver(BaseDriver):
         """
         Return a object CDN URL.
 
+<<<<<<< HEAD
         @param obj: Object instance
         @type  obj: L{Object}
 
         @return: A CDN URL for this object.
         @rtype: C{str}
+=======
+        :param obj: Object instance
+        :type  obj: :class:`Object`
+
+        :return: A CDN URL for this object.
+        :rtype: ``str``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'get_object_cdn_url not implemented for this driver')
@@ -257,10 +367,17 @@ class StorageDriver(BaseDriver):
         """
         Enable container CDN.
 
+<<<<<<< HEAD
         @param container: Container instance
         @type  container: L{Container}
 
         @rtype: C{bool}
+=======
+        :param container: Container instance
+        :type  container: :class:`Container`
+
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'enable_container_cdn not implemented for this driver')
@@ -269,10 +386,17 @@ class StorageDriver(BaseDriver):
         """
         Enable object CDN.
 
+<<<<<<< HEAD
         @param obj: Object instance
         @type  obj: L{Object}
 
         @rtype: C{bool}
+=======
+        :param obj: Object instance
+        :type  obj: :class:`Object`
+
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'enable_object_cdn not implemented for this driver')
@@ -282,6 +406,7 @@ class StorageDriver(BaseDriver):
         """
         Download an object to the specified destination path.
 
+<<<<<<< HEAD
         @param obj: Object instance.
         @type obj: L{Object}
 
@@ -300,6 +425,27 @@ class StorageDriver(BaseDriver):
         @return: True if an object has been successfully downloaded, False
         otherwise.
         @rtype: C{bool}
+=======
+        :param obj: Object instance.
+        :type obj: :class:`Object`
+
+        :param destination_path: Full path to a file or a directory where the
+                                 incoming file will be saved.
+        :type destination_path: ``str``
+
+        :param overwrite_existing: True to overwrite an existing file,
+                                   defaults to False.
+        :type overwrite_existing: ``bool``
+
+        :param delete_on_failure: True to delete a partially downloaded file if
+                                   the download was not successful (hash
+                                   mismatch / file size).
+        :type delete_on_failure: ``bool``
+
+        :return: True if an object has been successfully downloaded, False
+                 otherwise.
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'download_object not implemented for this driver')
@@ -308,6 +454,7 @@ class StorageDriver(BaseDriver):
         """
         Return a generator which yields object data.
 
+<<<<<<< HEAD
         @param obj: Object instance
         @type obj: L{Object}
 
@@ -315,6 +462,13 @@ class StorageDriver(BaseDriver):
         @type chunk_size: C{int}
 
         @rtype: C{object}
+=======
+        :param obj: Object instance
+        :type obj: :class:`Object`
+
+        :param chunk_size: Optional chunk size (in bytes).
+        :type chunk_size: ``int``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'download_object_as_stream not implemented for this driver')
@@ -324,6 +478,7 @@ class StorageDriver(BaseDriver):
         """
         Upload an object currently located on a disk.
 
+<<<<<<< HEAD
         @param file_path: Path to the object on disk.
         @type file_path: C{str}
 
@@ -340,6 +495,24 @@ class StorageDriver(BaseDriver):
         @type extra: C{dict}
 
         @rtype: C{object}
+=======
+        :param file_path: Path to the object on disk.
+        :type file_path: ``str``
+
+        :param container: Destination container.
+        :type container: :class:`Container`
+
+        :param object_name: Object name.
+        :type object_name: ``str``
+
+        :param verify_hash: Verify hash
+        :type verify_hash: ``bool``
+
+        :param extra: Extra attributes (driver specific). (optional)
+        :type extra: ``dict``
+
+        :rtype: :class:`Object`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'upload_object not implemented for this driver')
@@ -364,21 +537,35 @@ class StorageDriver(BaseDriver):
         function which uses fs.stat function to determine the file size and it
         doesn't need to buffer whole object in the memory.
 
-        @type iterator: C{object}
-        @param iterator: An object which implements the iterator interface.
+        :type iterator: :class:`object`
+        :param iterator: An object which implements the iterator interface.
 
+<<<<<<< HEAD
         @type container: L{Container}
         @param container: Destination container.
+=======
+        :type container: :class:`Container`
+        :param container: Destination container.
+>>>>>>> refs/remotes/nimbusproject/trunk
 
-        @type object_name: C{str}
-        @param object_name: Object name.
+        :type object_name: ``str``
+        :param object_name: Object name.
 
+<<<<<<< HEAD
         @type extra: C{dict}
         @param extra: (optional) Extra attributes (driver specific). Note:
             This dictionary must contain a 'content_type' key which represents
             a content type of the stored object.
 
         @rtype: C{object}
+=======
+        :type extra: ``dict``
+        :param extra: (optional) Extra attributes (driver specific). Note:
+            This dictionary must contain a 'content_type' key which represents
+            a content type of the stored object.
+
+        :rtype: ``object``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'upload_object_via_stream not implemented for this driver')
@@ -387,11 +574,19 @@ class StorageDriver(BaseDriver):
         """
         Delete an object.
 
+<<<<<<< HEAD
         @type obj: L{Object}
         @param obj: Object instance.
 
         @return: C{bool} True on success.
         @rtype: C{bool}
+=======
+        :type obj: :class:`Object`
+        :param obj: Object instance.
+
+        :return: ``bool`` True on success.
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'delete_object not implemented for this driver')
@@ -400,11 +595,16 @@ class StorageDriver(BaseDriver):
         """
         Create a new container.
 
-        @type container_name: C{str}
-        @param container_name: Container name.
+        :type container_name: ``str``
+        :param container_name: Container name.
 
+<<<<<<< HEAD
         @return: C{Container} instance on success.
         @rtype: L{Container}
+=======
+        :return: Container instance on success.
+        :rtype: :class:`Container`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'create_container not implemented for this driver')
@@ -413,11 +613,19 @@ class StorageDriver(BaseDriver):
         """
         Delete a container.
 
+<<<<<<< HEAD
         @type container: L{Container}
         @param container: Container instance
 
         @return: True on success, False otherwise.
         @rtype: C{bool}
+=======
+        :type container: :class:`Container`
+        :param container: Container instance
+
+        :return: ``True`` on success, ``False`` otherwise.
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'delete_container not implemented for this driver')
@@ -427,9 +635,10 @@ class StorageDriver(BaseDriver):
         """
         Call passed callback and start transfer of the object'
 
-        @type obj: C{Object}
-        @param obj: Object instance.
+        :type obj: :class:`Object`
+        :param obj: Object instance.
 
+<<<<<<< HEAD
         @type callback: C{Function}
         @param callback: Function which is called with the passed
             callback_kwargs
@@ -440,13 +649,30 @@ class StorageDriver(BaseDriver):
 
         @typed response: L{Response}
         @param response: Response instance.
+=======
+        :type callback: :class:`function`
+        :param callback: Function which is called with the passed
+            callback_kwargs
 
-        @type success_status_code: C{int}
-        @param success_status_code: Status code which represents a successful
+        :type callback_kwargs: ``dict``
+        :param callback_kwargs: Keyword arguments which are passed to the
+             callback.
+
+        :typed response: :class:`Response`
+        :param response: Response instance.
+>>>>>>> refs/remotes/nimbusproject/trunk
+
+        :type success_status_code: ``int``
+        :param success_status_code: Status code which represents a successful
                                     transfer (defaults to httplib.OK)
 
+<<<<<<< HEAD
         @return: True on success, False otherwise.
         @rtype: C{bool}
+=======
+        :return: ``True`` on success, ``False`` otherwise.
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         success_status_code = success_status_code or httplib.OK
 
@@ -466,6 +692,7 @@ class StorageDriver(BaseDriver):
         """
         Save object to the provided path.
 
+<<<<<<< HEAD
         @type response: L{RawResponse}
         @param response: RawResponse instance.
 
@@ -474,11 +701,22 @@ class StorageDriver(BaseDriver):
 
         @type destination_path: C{str}
         @param destination_path: Destination directory.
+=======
+        :type response: :class:`RawResponse`
+        :param response: RawResponse instance.
 
-        @type delete_on_failure: C{bool}
-        @param delete_on_failure: True to delete partially downloaded object if
+        :type obj: :class:`Object`
+        :param obj: Object instance.
+
+        :type destination_path: ``str``
+        :param destination_path: Destination directory.
+>>>>>>> refs/remotes/nimbusproject/trunk
+
+        :type delete_on_failure: ``bool``
+        :param delete_on_failure: True to delete partially downloaded object if
                                   the download fails.
 
+<<<<<<< HEAD
         @type overwrite_existing: C{bool}
         @param overwrite_existing: True to overwrite a local path if it already
                                    exists.
@@ -489,6 +727,18 @@ class StorageDriver(BaseDriver):
 
         @return: True on success, False otherwise.
         @rtype: C{bool}
+=======
+        :type overwrite_existing: ``bool``
+        :param overwrite_existing: True to overwrite a local path if it already
+                                   exists.
+
+        :type chunk_size: ``int``
+        :param chunk_size: Optional chunk size
+            (defaults to ``libcloud.storage.base.CHUNK_SIZE``, 8kb)
+
+        :return: ``True`` on success, ``False`` otherwise.
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         chunk_size = chunk_size or CHUNK_SIZE
@@ -591,7 +841,7 @@ class StorageDriver(BaseDriver):
             file_size = os.path.getsize(file_path)
             upload_func_kwargs['chunked'] = False
 
-        if file_size is not None:
+        if file_size is not None and 'Content-Length' not in headers:
             headers['Content-Length'] = file_size
 
         headers['Content-Type'] = content_type
@@ -615,18 +865,18 @@ class StorageDriver(BaseDriver):
         """
         Upload data stored in a string.
 
-        @type response: C{RawResponse}
-        @param response: RawResponse object.
+        :type response: :class:`RawResponse`
+        :param response: RawResponse object.
 
-        @type data: C{str}
-        @param data: Data to upload.
+        :type data: ``str``
+        :param data: Data to upload.
 
-        @type calculate_hash: C{boolean}
-        @param calculate_hash: True to calculate hash of the transfered data.
+        :type calculate_hash: ``bool``
+        :param calculate_hash: True to calculate hash of the transfered data.
                                (defauls to True).
 
-        @rtype: C{tuple}
-        @return: First item is a boolean indicator of success, second
+        :rtype: ``tuple``
+        :return: First item is a boolean indicator of success, second
                  one is the uploaded data MD5 hash and the third one
                  is the number of transferred bytes.
         """
@@ -652,30 +902,30 @@ class StorageDriver(BaseDriver):
         return True, data_hash, bytes_transferred
 
     def _stream_data(self, response, iterator, chunked=False,
-                     calculate_hash=True, chunk_size=None):
+                     calculate_hash=True, chunk_size=None, data=None):
         """
         Stream a data over an http connection.
 
-        @type response: C{RawResponse}
-        @param response: RawResponse object.
+        :type response: :class:`RawResponse`
+        :param response: RawResponse object.
 
-        @type iterator: C{}
-        @param response: An object which implements an iterator interface
+        :type iterator: :class:`object`
+        :param response: An object which implements an iterator interface
                          or a File like object with read method.
 
-        @type chunked: C{boolean}
-        @param chunked: True if the chunked transfer encoding should be used
+        :type chunked: ``bool``
+        :param chunked: True if the chunked transfer encoding should be used
                         (defauls to False).
 
-        @type calculate_hash: C{boolean}
-        @param calculate_hash: True to calculate hash of the transfered data.
+        :type calculate_hash: ``bool``
+        :param calculate_hash: True to calculate hash of the transfered data.
                                (defauls to True).
 
-        @type chunk_size: C{int}
-        @param chunk_size: Optional chunk size (defaults to CHUNK_SIZE)
+        :type chunk_size: ``int``
+        :param chunk_size: Optional chunk size (defaults to ``CHUNK_SIZE``)
 
-        @rtype: C{tuple}
-        @return: First item is a boolean indicator of success, second
+        :rtype: ``tuple``
+        :return: First item is a boolean indicator of success, second
                  one is the uploaded data MD5 hash and the third one
                  is the number of transferred bytes.
         """
@@ -741,18 +991,18 @@ class StorageDriver(BaseDriver):
         """
         Upload a file to the server.
 
-        @type response: C{RawResponse}
-        @param response: RawResponse object.
+        :type response: :class:`RawResponse`
+        :param response: RawResponse object.
 
-        @type file_path: C{str}
-        @param file_path: Path to a local file.
+        :type file_path: ``str``
+        :param file_path: Path to a local file.
 
-        @type iterator: C{}
-        @param response: An object which implements an iterator interface (File
+        :type iterator: :class:`object`
+        :param response: An object which implements an iterator interface (File
                          object, etc.)
 
-        @rtype: C{tuple}
-        @return: First item is a boolean indicator of success, second
+        :rtype: ``tuple``
+        :return: First item is a boolean indicator of success, second
                  one is the uploaded data MD5 hash and the third one
                  is the number of transferred bytes.
         """

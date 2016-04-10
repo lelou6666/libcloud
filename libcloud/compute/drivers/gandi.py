@@ -39,6 +39,41 @@ NODE_STATE_MAP = {
 
 NODE_PRICE_HOURLY_USD = 0.02
 
+INSTANCE_TYPES = {
+    'small': {
+        'id': 'small',
+        'name': 'Small instance',
+        'cpu': 1,
+        'memory': 256,
+        'disk': 3,
+        'bandwidth': 10240,
+    },
+    'medium': {
+        'id': 'medium',
+        'name': 'Medium instance',
+        'cpu': 1,
+        'memory': 1024,
+        'disk': 20,
+        'bandwidth': 10240,
+    },
+    'large': {
+        'id': 'large',
+        'name': 'Large instance',
+        'cpu': 2,
+        'memory': 2048,
+        'disk': 50,
+        'bandwidth': 10240,
+    },
+    'x-large': {
+        'id': 'x-large',
+        'name': 'Extra Large instance',
+        'cpu': 4,
+        'memory': 4096,
+        'disk': 100,
+        'bandwidth': 10240,
+    },
+}
+
 
 class GandiNodeDriver(BaseGandiDriver, NodeDriver):
     """
@@ -55,14 +90,18 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
 
     def __init__(self, *args, **kwargs):
         """
+<<<<<<< HEAD
         @inherits: L{NodeDriver.__init__}
+=======
+        @inherits: :class:`NodeDriver.__init__`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         super(BaseGandiDriver, self).__init__(*args, **kwargs)
 
     def _resource_info(self, type, id):
         try:
-            obj = self.connection.request('%s.info' % type, int(id))
-            return obj
+            obj = self.connection.request('hosting.%s.info' % type, int(id))
+            return obj.object
         except Exception:
             e = sys.exc_info()[1]
             raise GandiException(1003, e)
@@ -109,8 +148,8 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         return [self._to_volume(d) for d in disks]
 
     def list_nodes(self):
-        vms = self.connection.request('vm.list')
-        ips = self.connection.request('ip.list')
+        vms = self.connection.request('hosting.vm.list').object
+        ips = self.connection.request('hosting.ip.list').object
         for vm in vms:
             vm['ips'] = []
             for ip in ips:
@@ -123,8 +162,8 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         return nodes
 
     def reboot_node(self, node):
-        op = self.connection.request('vm.reboot', int(node.id))
-        self._wait_operation(op['id'])
+        op = self.connection.request('hosting.vm.reboot', int(node.id))
+        self._wait_operation(op.object['id'])
         vm = self._node_info(int(node.id))
         if vm['state'] == 'running':
             return True
@@ -134,12 +173,17 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         vm = self._node_info(node.id)
         if vm['state'] == 'running':
             # Send vm_stop and wait for accomplish
-            op_stop = self.connection.request('vm.stop', int(node.id))
-            if not self._wait_operation(op_stop['id']):
+            op_stop = self.connection.request('hosting.vm.stop', int(node.id))
+            if not self._wait_operation(op_stop.object['id']):
                 raise GandiException(1010, 'vm.stop failed')
             # Delete
+<<<<<<< HEAD
         op = self.connection.request('vm.delete', int(node.id))
         if self._wait_operation(op['id']):
+=======
+        op = self.connection.request('hosting.vm.delete', int(node.id))
+        if self._wait_operation(op.object['id']):
+>>>>>>> refs/remotes/nimbusproject/trunk
             return True
         return False
 
@@ -147,7 +191,7 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         """
         deploy_node is not implemented for gandi driver
 
-        @rtype: C{bool}
+        :rtype: ``bool``
         """
         raise NotImplementedError(
             'deploy_node not implemented for gandi driver')
@@ -156,30 +200,30 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         """
         Create a new Gandi node
 
-        @keyword    name:   String with a name for this new node (required)
-        @type       name:   C{str}
+        :keyword    name:   String with a name for this new node (required)
+        :type       name:   ``str``
 
-        @keyword    image:  OS Image to boot on node. (required)
-        @type       image:  L{NodeImage}
+        :keyword    image:  OS Image to boot on node. (required)
+        :type       image:  :class:`NodeImage`
 
-        @keyword    location: Which data center to create a node in. If empty,
+        :keyword    location: Which data center to create a node in. If empty,
                               undefined behavior will be selected. (optional)
-        @type       location: L{NodeLocation}
+        :type       location: :class:`NodeLocation`
 
-        @keyword    size:   The size of resources allocated to this node.
+        :keyword    size:   The size of resources allocated to this node.
                             (required)
-        @type       size:   L{NodeSize}
+        :type       size:   :class:`NodeSize`
 
-        @keyword    login: user name to create for login on machine (required)
-        @type       login: C{str}
+        :keyword    login: user name to create for login on machine (required)
+        :type       login: ``str``
 
-        @keyword    password: password for user that'll be created (required)
-        @type       password: C{str}
+        :keyword    password: password for user that'll be created (required)
+        :type       password: ``str``
 
-        @keyword    inet_family: version of ip to use, default 4 (optional)
-        @type       inet_family: C{int}
+        :keyword    inet_family: version of ip to use, default 4 (optional)
+        :type       inet_family: ``int``
 
-        @rtype: L{Node}
+        :rtype: :class:`Node`
         """
 
         if kwargs.get('login') is None or kwargs.get('password') is None:
@@ -198,6 +242,10 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
             raise GandiException(
                 1022, 'size must be a subclass of NodeSize')
 
+        # If size name is in INSTANCE_TYPE we use new rating model
+        instance = INSTANCE_TYPES.get(size.id)
+        cores = instance['cpu'] if instance else int(size.id)
+
         src_disk_id = int(kwargs['image'].id)
 
         disk_spec = {
@@ -211,7 +259,7 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
             'login': kwargs['login'],
             'password': kwargs['password'],  # TODO : use NodeAuthPassword
             'memory': int(size.ram),
-            'cores': int(size.id),
+            'cores': cores,
             'bandwidth': int(size.bandwidth),
             'ip_version': kwargs.get('inet_family', 4),
         }
@@ -219,9 +267,9 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         # Call create_from helper api. Return 3 operations : disk_create,
         # iface_create,vm_create
         (op_disk, op_iface, op_vm) = self.connection.request(
-            'vm.create_from',
+            'hosting.vm.create_from',
             vm_spec, disk_spec, src_disk_id
-        )
+        ).object
 
         # We wait for vm_create to finish
         if self._wait_operation(op_vm['id']):
@@ -250,8 +298,8 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
                 filtering = {'datacenter_id': int(location.id)}
             else:
                 filtering = {}
-            images = self.connection.request('image.list', filtering)
-            return [self._to_image(i) for i in images]
+            images = self.connection.request('hosting.image.list', filtering)
+            return [self._to_image(i) for i in images.object]
         except Exception:
             e = sys.exc_info()[1]
             raise GandiException(1011, e)
@@ -267,8 +315,26 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
             driver=self.connection.driver,
         )
 
+    def _instance_type_to_size(self, instance):
+        return NodeSize(
+            id=instance['id'],
+            name=instance['name'],
+            ram=instance['memory'],
+            disk=instance['disk'],
+            bandwidth=instance['bandwidth'],
+            price=self._get_size_price(size_id=instance['id']),
+            driver=self.connection.driver,
+        )
+
+    def list_instance_type(self, location=None):
+        return [self._instance_type_to_size(instance)
+                for name, instance in INSTANCE_TYPES.items()]
+
     def list_sizes(self, location=None):
-        account = self.connection.request('account.info')
+        account = self.connection.request('hosting.account.info').object
+        if account.get('rating_enabled'):
+            # This account use new rating model
+            return self.list_instance_type(location)
         # Look for available shares, and return a list of share_definition
         available_res = account['resources']['available']
 
@@ -306,16 +372,23 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         )
 
     def list_locations(self):
-        res = self.connection.request("datacenter.list")
-        return [self._to_loc(l) for l in res]
+        res = self.connection.request('hosting.datacenter.list')
+        return [self._to_loc(l) for l in res.object]
 
     def list_volumes(self):
         """
 
+<<<<<<< HEAD
         @rtype: C{list} of L{StorageVolume}
         """
         res = self.connection.request('disk.list', {})
         return self._to_volumes(res)
+=======
+        :rtype: ``list`` of :class:`StorageVolume`
+        """
+        res = self.connection.request('hosting.disk.list', {})
+        return self._to_volumes(res.object)
+>>>>>>> refs/remotes/nimbusproject/trunk
 
     def create_volume(self, size, name, location=None, snapshot=None):
         disk_param = {
@@ -324,25 +397,36 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
             'datacenter_id': int(location.id)
         }
         if snapshot:
+<<<<<<< HEAD
             op = self.connection.request('disk.create_from',
+=======
+            op = self.connection.request('hosting.disk.create_from',
+>>>>>>> refs/remotes/nimbusproject/trunk
                                          disk_param, int(snapshot.id))
         else:
-            op = self.connection.request('disk.create', disk_param)
-        if self._wait_operation(op['id']):
-            disk = self._volume_info(op['disk_id'])
+            op = self.connection.request('hosting.disk.create', disk_param)
+        if self._wait_operation(op.object['id']):
+            disk = self._volume_info(op.object['disk_id'])
             return self._to_volume(disk)
         return None
 
     def attach_volume(self, node, volume, device=None):
+<<<<<<< HEAD
         op = self.connection.request('vm.disk_attach',
                                      int(node.id), int(volume.id))
         if self._wait_operation(op['id']):
+=======
+        op = self.connection.request('hosting.vm.disk_attach',
+                                     int(node.id), int(volume.id))
+        if self._wait_operation(op.object['id']):
+>>>>>>> refs/remotes/nimbusproject/trunk
             return True
         return False
 
     def detach_volume(self, node, volume):
         """
         Detaches a volume from a node.
+<<<<<<< HEAD
 
         @param      node: Node which should be used
         @type       node: L{Node}
@@ -355,12 +439,26 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         op = self.connection.request('vm.disk_detach',
                                      int(node.id), int(volume.id))
         if self._wait_operation(op['id']):
+=======
+
+        :param      node: Node which should be used
+        :type       node: :class:`Node`
+
+        :param      volume: Volume to be detached
+        :type       volume: :class:`StorageVolume`
+
+        :rtype: ``bool``
+        """
+        op = self.connection.request('hosting.vm.disk_detach',
+                                     int(node.id), int(volume.id))
+        if self._wait_operation(op.object['id']):
+>>>>>>> refs/remotes/nimbusproject/trunk
             return True
         return False
 
     def destroy_volume(self, volume):
-        op = self.connection.request('disk.delete', int(volume.id))
-        if self._wait_operation(op['id']):
+        op = self.connection.request('hosting.disk.delete', int(volume.id))
+        if self._wait_operation(op.object['id']):
             return True
         return False
 
@@ -399,10 +497,10 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         """
         Specific method to list network interfaces
 
-        @rtype: C{list} of L{GandiNetworkInterface}
+        :rtype: ``list`` of :class:`GandiNetworkInterface`
         """
-        ifaces = self.connection.request('iface.list')
-        ips = self.connection.request('ip.list')
+        ifaces = self.connection.request('hosting.iface.list').object
+        ips = self.connection.request('hosting.ip.list').object
         for iface in ifaces:
             iface['ips'] = list(
                 filter(lambda i: i['iface_id'] == iface['id'], ips))
@@ -429,26 +527,26 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         """
         Specific method to list all disk
 
-        @rtype: C{list} of L{GandiDisk}
+        :rtype: ``list`` of :class:`GandiDisk`
         """
-        res = self.connection.request('disk.list', {})
-        return self._to_disks(res)
+        res = self.connection.request('hosting.disk.list', {})
+        return self._to_disks(res.object)
 
     def ex_node_attach_disk(self, node, disk):
         """
         Specific method to attach a disk to a node
 
-        @param      node: Node which should be used
-        @type       node: L{Node}
+        :param      node: Node which should be used
+        :type       node: :class:`Node`
 
-        @param      disk: Disk which should be used
-        @type       disk: L{GandiDisk}
+        :param      disk: Disk which should be used
+        :type       disk: :class:`GandiDisk`
 
-        @rtype: C{bool}
+        :rtype: ``bool``
         """
-        op = self.connection.request('vm.disk_attach',
+        op = self.connection.request('hosting.vm.disk_attach',
                                      int(node.id), int(disk.id))
-        if self._wait_operation(op['id']):
+        if self._wait_operation(op.object['id']):
             return True
         return False
 
@@ -456,17 +554,17 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         """
         Specific method to detach a disk from a node
 
-        @param      node: Node which should be used
-        @type       node: L{Node}
+        :param      node: Node which should be used
+        :type       node: :class:`Node`
 
-        @param      disk: Disk which should be used
-        @type       disk: L{GandiDisk}
+        :param      disk: Disk which should be used
+        :type       disk: :class:`GandiDisk`
 
-        @rtype: C{bool}
+        :rtype: ``bool``
         """
-        op = self.connection.request('vm.disk_detach',
+        op = self.connection.request('hosting.vm.disk_detach',
                                      int(node.id), int(disk.id))
-        if self._wait_operation(op['id']):
+        if self._wait_operation(op.object['id']):
             return True
         return False
 
@@ -474,18 +572,18 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         """
         Specific method to attach an interface to a node
 
-        @param      node: Node which should be used
-        @type       node: L{Node}
+        :param      node: Node which should be used
+        :type       node: :class:`Node`
 
 
-        @param      iface: Network interface which should be used
-        @type       iface: L{GandiNetworkInterface}
+        :param      iface: Network interface which should be used
+        :type       iface: :class:`GandiNetworkInterface`
 
-        @rtype: C{bool}
+        :rtype: ``bool``
         """
-        op = self.connection.request('vm.iface_attach',
+        op = self.connection.request('hosting.vm.iface_attach',
                                      int(node.id), int(iface.id))
-        if self._wait_operation(op['id']):
+        if self._wait_operation(op.object['id']):
             return True
         return False
 
@@ -493,18 +591,18 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         """
         Specific method to detach an interface from a node
 
-        @param      node: Node which should be used
-        @type       node: L{Node}
+        :param      node: Node which should be used
+        :type       node: :class:`Node`
 
 
-        @param      iface: Network interface which should be used
-        @type       iface: L{GandiNetworkInterface}
+        :param      iface: Network interface which should be used
+        :type       iface: :class:`GandiNetworkInterface`
 
-        @rtype: C{bool}
+        :rtype: ``bool``
         """
-        op = self.connection.request('vm.iface_detach',
+        op = self.connection.request('hosting.vm.iface_detach',
                                      int(node.id), int(iface.id))
-        if self._wait_operation(op['id']):
+        if self._wait_operation(op.object['id']):
             return True
         return False
 
@@ -512,17 +610,18 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         """
         Specific method to make a snapshot of a disk
 
-        @param      disk: Disk which should be used
-        @type       disk: L{GandiDisk}
+        :param      disk: Disk which should be used
+        :type       disk: :class:`GandiDisk`
 
-        @param      name: Name which should be used
-        @type       name: C{str}
+        :param      name: Name which should be used
+        :type       name: ``str``
 
-        @rtype: C{bool}
+        :rtype: ``bool``
         """
         if not disk.extra.get('can_snapshot'):
-            raise GandiException(1021, "Disk %s can't snapshot" % disk.id)
+            raise GandiException(1021, 'Disk %s can\'t snapshot' % disk.id)
         if not name:
+<<<<<<< HEAD
             suffix = datetime.today().strftime("%Y%m%d")
             name = "snap_%s" % (suffix)
         op = self.connection.request(
@@ -531,6 +630,16 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
             int(disk.id),
         )
         if self._wait_operation(op['id']):
+=======
+            suffix = datetime.today().strftime('%Y%m%d')
+            name = 'snap_%s' % (suffix)
+        op = self.connection.request(
+            'hosting.disk.create_from',
+            {'name': name, 'type': 'snapshot', },
+            int(disk.id),
+        )
+        if self._wait_operation(op.object['id']):
+>>>>>>> refs/remotes/nimbusproject/trunk
             return True
         return False
 
@@ -538,25 +647,25 @@ class GandiNodeDriver(BaseGandiDriver, NodeDriver):
         """Specific method to update size or name of a disk
         WARNING: if a server is attached it'll be rebooted
 
-        @param      disk: Disk which should be used
-        @type       disk: L{GandiDisk}
+        :param      disk: Disk which should be used
+        :type       disk: :class:`GandiDisk`
 
-        @param      new_size: New size
-        @type       new_size: C{int}
+        :param      new_size: New size
+        :type       new_size: ``int``
 
-        @param      new_name: New name
-        @type       new_name: C{str}
+        :param      new_name: New name
+        :type       new_name: ``str``
 
-        @rtype: C{bool}
+        :rtype: ``bool``
         """
         params = {}
         if new_size:
             params.update({'size': new_size})
         if new_name:
             params.update({'name': new_name})
-        op = self.connection.request('disk.update',
+        op = self.connection.request('hosting.disk.update',
                                      int(disk.id),
                                      params)
-        if self._wait_operation(op['id']):
+        if self._wait_operation(op.object['id']):
             return True
         return False

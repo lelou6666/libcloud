@@ -141,7 +141,11 @@ class SlicehostNodeDriver(NodeDriver):
               <error>Permission denied</error>
             </errors>
 
+<<<<<<< HEAD
         @inherits: L{NodeDriver.destroy_node}
+=======
+        @inherits: :class:`NodeDriver.destroy_node`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         uri = '/slices/%s/destroy.xml' % (node.id)
         self.connection.request(uri, method='PUT')

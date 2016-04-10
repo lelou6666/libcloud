@@ -20,7 +20,7 @@ import hmac
 try:
     import simplejson as json
 except ImportError:
-    import json
+    import json  # NOQA
 
 from libcloud.utils.py3 import httplib
 from libcloud.utils.py3 import urlencode
@@ -80,14 +80,18 @@ class NimbusConnection(ConnectionUserAndKey):
 
 class NimbusStorageDriver(StorageDriver):
     name = 'Nimbus'
+<<<<<<< HEAD
     website = 'http://www.nimbusproject.org/'
+=======
+    website = 'https://nimbus.io/'
+>>>>>>> refs/remotes/nimbusproject/trunk
     connectionCls = NimbusConnection
 
     def __init__(self, *args, **kwargs):
         self.user_id = kwargs['user_id']
         super(NimbusStorageDriver, self).__init__(*args, **kwargs)
 
-    def list_containers(self):
+    def iterate_containers(self):
         response = self.connection.request('/customers/%s/collections' %
                                            (self.connection.user_id))
         return self._to_containers(response.object)
@@ -101,7 +105,8 @@ class NimbusStorageDriver(StorageDriver):
         return self._to_container(response.object)
 
     def _to_containers(self, data):
-        return [self._to_container(item) for item in data]
+        for item in data:
+            yield self._to_container(item)
 
     def _to_container(self, data):
         name = data[0]

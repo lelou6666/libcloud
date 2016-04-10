@@ -13,13 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from libcloud.compute.base import Node, NodeImage, NodeLocation
+from libcloud.compute.base import Node, NodeImage, NodeLocation, StorageVolume
 from libcloud.pricing import get_pricing
 
 
 class TestCaseMixin(object):
     should_list_locations = True
     should_have_pricing = False
+    should_list_volumes = False
 
     def test_list_nodes_response(self):
         nodes = self.driver.list_nodes()
@@ -35,7 +36,7 @@ class TestCaseMixin(object):
         self.assertTrue(size.ram is None or isinstance(size.ram, int))
         self.assertTrue(size.disk is None or isinstance(size.disk, int))
         self.assertTrue(size.bandwidth is None or
-                            isinstance(size.bandwidth, int))
+                        isinstance(size.bandwidth, int))
         # Check that price values are ints, floats, or None.
         self.assertTrue(size.price is None or isinstance(size.price, float)
                         or isinstance(size.price, int))
@@ -45,6 +46,15 @@ class TestCaseMixin(object):
         self.assertTrue(isinstance(images, list))
         for image in images:
             self.assertTrue(isinstance(image, NodeImage))
+
+    def test_list_volumes_response(self):
+        if not self.should_list_volumes:
+            return None
+
+        volumes = self.driver.list_volumes()
+        self.assertTrue(isinstance(volumes, list))
+        for volume in volumes:
+            self.assertTrue(isinstance(volume, StorageVolume))
 
     def test_list_locations_response(self):
         if not self.should_list_locations:
@@ -60,8 +70,8 @@ class TestCaseMixin(object):
         size = self.driver.list_sizes()[0]
         image = self.driver.list_images()[0]
         node = self.driver.create_node(name='node-name',
-                                     image=image,
-                                     size=size)
+                                       image=image,
+                                       size=size)
         self.assertTrue(isinstance(node, Node))
 
     def test_destroy_node_response(self):

@@ -49,10 +49,17 @@ class LibvirtNodeDriver(NodeDriver):
 
     def __init__(self, uri):
         """
+<<<<<<< HEAD
         @param  uri: URI (required)
         @type   uri: C{str}
 
         @rtype: C{None}
+=======
+        :param  uri: URI (required)
+        :type   uri: ``str``
+
+        :rtype: ``None``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         if not have_libvirt:
             raise RuntimeError('Libvirt driver requires \'libvirt\' Python ' +
@@ -92,16 +99,16 @@ class LibvirtNodeDriver(NodeDriver):
 
     def destroy_node(self, node):
         domain = self._get_domain_for_node(node=node)
-        return domain.destroy(flags=0) == 0
+        return domain.destroy() == 0
 
     def ex_start(self, node):
         """
         Start a stopped node.
 
-        @param  node: Node which should be used
-        @type   node: L{Node}
+        :param  node: Node which should be used
+        :type   node: :class:`Node`
 
-        @rtype: C{bool}
+        :rtype: ``bool``
         """
         domain = self._get_domain_for_node(node=node)
         return domain.create() == 0
@@ -110,10 +117,10 @@ class LibvirtNodeDriver(NodeDriver):
         """
         Shutdown a running node.
 
-        @param  node: Node which should be used
-        @type   node: L{Node}
+        :param  node: Node which should be used
+        :type   node: :class:`Node`
 
-        @rtype: C{bool}
+        :rtype: ``bool``
         """
         domain = self._get_domain_for_node(node=node)
         return domain.shutdown() == 0
@@ -122,10 +129,10 @@ class LibvirtNodeDriver(NodeDriver):
         """
         Suspend a running node.
 
-        @param  node: Node which should be used
-        @type   node: L{Node}
+        :param  node: Node which should be used
+        :type   node: :class:`Node`
 
-        @rtype: C{bool}
+        :rtype: ``bool``
         """
         domain = self._get_domain_for_node(node=node)
         return domain.suspend() == 0
@@ -134,10 +141,10 @@ class LibvirtNodeDriver(NodeDriver):
         """
         Resume a suspended node.
 
-        @param  node: Node which should be used
-        @type   node: L{Node}
+        :param  node: Node which should be used
+        :type   node: :class:`Node`
 
-        @rtype: C{bool}
+        :rtype: ``bool``
         """
         domain = self._get_domain_for_node(node=node)
         return domain.resume() == 0

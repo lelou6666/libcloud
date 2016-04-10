@@ -31,6 +31,8 @@ except ImportError:
 
 import libcloud.utils.misc
 from libcloud.utils.dist import get_packages, get_data_files
+from libcloud.utils.py3 import unittest2_required
+
 libcloud.utils.misc.SHOW_DEPRECATION_WARNING = False
 
 
@@ -40,8 +42,8 @@ TEST_PATHS = ['libcloud/test', 'libcloud/test/common', 'libcloud/test/compute',
               'libcloud/test/storage', 'libcloud/test/loadbalancer',
               'libcloud/test/dns']
 DOC_TEST_MODULES = ['libcloud.compute.drivers.dummy',
-                     'libcloud.storage.drivers.dummy',
-                     'libcloud.dns.drivers.dummy']
+                    'libcloud.storage.drivers.dummy',
+                    'libcloud.dns.drivers.dummy']
 
 SUPPORTED_VERSIONS = ['2.5', '2.6', '2.7', 'PyPy', '3.x']
 
@@ -51,6 +53,9 @@ if sys.version_info <= (2, 4):
           ', '.join(SUPPORTED_VERSIONS))
     sys.exit(1)
 
+# pre-2.6 will need the ssl PyPI package
+pre_python26 = (sys.version_info[0] == 2 and sys.version_info[1] < 6)
+
 
 def read_version_string():
     version = None
@@ -59,6 +64,17 @@ def read_version_string():
     version = __version__
     sys.path.pop(0)
     return version
+
+
+def forbid_publish():
+    argv = sys.argv
+    if 'upload'in argv:
+        print('You shouldn\'t use upload command to upload a release to PyPi. '
+              'You need to manually upload files generated using release.sh '
+              'script.\n'
+              'For more information, see "Making a release section" in the '
+              'documentation')
+        sys.exit(1)
 
 
 class TestCommand(Command):
@@ -81,9 +97,20 @@ class TestCommand(Command):
             mock
         except ImportError:
             print('Missing "mock" library. mock is library is needed '
-                 'to run the tests. You can install it using pip: '
-                 'pip install mock')
+                  'to run the tests. You can install it using pip: '
+                  'pip install mock')
             sys.exit(1)
+
+        if unittest2_required:
+            try:
+                import unittest2
+                unittest2
+            except ImportError:
+                print('Python version: %s' % (sys.version))
+                print('Missing "unittest2" library. unittest2 is library is '
+                      'needed to run the tests. You can install it using pip: '
+                      'pip install unittest2')
+                sys.exit(1)
 
         status = self._run_tests()
         sys.exit(status)
@@ -103,11 +130,9 @@ class TestCommand(Command):
 
         if mtime_dist > mtime_current:
             print("It looks like test/secrets.py file is out of date.")
-            print("Please copy the new secret.py-dist file over otherwise" +
+            print("Please copy the new secrets.py-dist file over otherwise" +
                   " tests might fail")
 
-        pre_python26 = (sys.version_info[0] == 2
-                        and sys.version_info[1] < 6)
         if pre_python26:
             missing = []
             # test for dependencies
@@ -159,12 +184,12 @@ class Pep8Command(Command):
             pep8
         except ImportError:
             print ('Missing "pep8" library. You can install it using pip: '
-                  'pip install pep8')
+                   'pip install pep8')
             sys.exit(1)
 
         cwd = os.getcwd()
         retcode = call(('pep8 %s/libcloud/' %
-                (cwd)).split(' '))
+                       (cwd)).split(' '))
         sys.exit(retcode)
 
 
@@ -215,8 +240,7 @@ class CoverageCommand(Command):
         cov.save()
         cov.html_report()
 
-# pre-2.6 will need the ssl PyPI package
-pre_python26 = (sys.version_info[0] == 2 and sys.version_info[1] < 6)
+forbid_publish()
 
 setup(
     name='apache-libcloud',
@@ -255,4 +279,5 @@ setup(
         'Programming Language :: Python :: 3.0',
         'Programming Language :: Python :: 3.1',
         'Programming Language :: Python :: 3.2',
+        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: Implementation :: PyPy'])

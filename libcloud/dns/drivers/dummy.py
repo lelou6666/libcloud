@@ -35,6 +35,7 @@ class DummyDNSDriver(DNSDriver):
 
     def __init__(self, api_key, api_secret):
         """
+<<<<<<< HEAD
         @param    api_key:    API key or username to used (required)
         @type     api_key:    C{str}
 
@@ -42,6 +43,15 @@ class DummyDNSDriver(DNSDriver):
         @type     api_secret: C{str}
 
         @rtype: C{None}
+=======
+        :param    api_key:    API key or username to used (required)
+        :type     api_key:    ``str``
+
+        :param    api_secret: Secret password to be used (required)
+        :type     api_secret: ``str``
+
+        :rtype: ``None``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         self._zones = {}
 
@@ -49,9 +59,15 @@ class DummyDNSDriver(DNSDriver):
         """
         >>> driver = DummyDNSDriver('key', 'secret')
         >>> driver.list_record_types()
+<<<<<<< HEAD
         [0]
 
         @inherits: L{DNSDriver.list_record_types}
+=======
+        ['A']
+
+        @inherits: :class:`DNSDriver.list_record_types`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         return [RecordType.A]
 
@@ -61,13 +77,28 @@ class DummyDNSDriver(DNSDriver):
         >>> driver.list_zones()
         []
 
+<<<<<<< HEAD
         @inherits: L{DNSDriver.list_zones}
+=======
+        @inherits: :class:`DNSDriver.list_zones`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         return [zone['zone'] for zone in list(self._zones.values())]
 
     def list_records(self, zone):
-        return self.get_zone(zone_id=zone.id).records
+        """
+        >>> driver = DummyDNSDriver('key', 'secret')
+        >>> zone = driver.create_zone(domain='apache.org', type='master',
+        ...                           ttl=100)
+        >>> list(zone.list_records())
+        []
+        >>> record = driver.create_record(name='libcloud', zone=zone,
+        ...                               type=RecordType.A, data='127.0.0.1')
+        >>> list(zone.list_records()) #doctest: +ELLIPSIS
+        [<Record: zone=id-apache.org, name=libcloud, type=A...>]
+        """
+        return self._zones[zone.id]['records'].values()
 
     def get_zone(self, zone_id):
         """
@@ -77,7 +108,11 @@ class DummyDNSDriver(DNSDriver):
         Traceback (most recent call last):
         ZoneDoesNotExistError:
 
+<<<<<<< HEAD
         @inherits: L{DNSDriver.get_zone}
+=======
+        @inherits: :class:`DNSDriver.get_zone`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         if zone_id not in self._zones:
@@ -94,7 +129,11 @@ class DummyDNSDriver(DNSDriver):
         Traceback (most recent call last):
         ZoneDoesNotExistError:
 
+<<<<<<< HEAD
         @inherits: L{DNSDriver.get_record}
+=======
+        @inherits: :class:`DNSDriver.get_record`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         self.get_zone(zone_id=zone_id)
@@ -119,7 +158,11 @@ class DummyDNSDriver(DNSDriver):
         Traceback (most recent call last):
         ZoneAlreadyExistsError:
 
+<<<<<<< HEAD
         @inherits: L{DNSDriver.create_zone}
+=======
+        @inherits: :class:`DNSDriver.create_zone`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         id = 'id-%s' % (domain)
@@ -148,7 +191,11 @@ class DummyDNSDriver(DNSDriver):
         Traceback (most recent call last):
         RecordAlreadyExistsError:
 
+<<<<<<< HEAD
         @inherits: L{DNSDriver.create_record}
+=======
+        @inherits: :class:`DNSDriver.create_record`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         id = 'id-%s' % (name)
 
@@ -174,7 +221,11 @@ class DummyDNSDriver(DNSDriver):
         Traceback (most recent call last):
         ZoneDoesNotExistError:
 
+<<<<<<< HEAD
         @inherits: L{DNSDriver.delete_zone}
+=======
+        @inherits: :class:`DNSDriver.delete_zone`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         self.get_zone(zone_id=zone.id)
 
@@ -194,7 +245,11 @@ class DummyDNSDriver(DNSDriver):
         Traceback (most recent call last):
         RecordDoesNotExistError:
 
+<<<<<<< HEAD
         @inherits: L{DNSDriver.delete_record}
+=======
+        @inherits: :class:`DNSDriver.delete_record`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         self.get_record(zone_id=record.zone.id, record_id=record.id)
 

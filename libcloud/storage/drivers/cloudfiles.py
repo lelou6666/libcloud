@@ -45,12 +45,10 @@ from libcloud.storage.types import ContainerIsNotEmptyError
 from libcloud.storage.types import ObjectDoesNotExistError
 from libcloud.storage.types import ObjectHashMismatchError
 from libcloud.storage.types import InvalidContainerNameError
-from libcloud.common.types import LazyList
 from libcloud.common.openstack import OpenStackBaseConnection
 from libcloud.common.openstack import OpenStackDriverMixin
 
-from libcloud.common.rackspace import (
-    AUTH_URL_US, AUTH_URL_UK)
+from libcloud.common.rackspace import AUTH_URL
 
 CDN_HOST = 'cdn.clouddrive.com'
 API_VERSION = 'v1.0'
@@ -102,9 +100,11 @@ class CloudFilesConnection(OpenStackBaseConnection):
     Base connection class for the Cloudfiles driver.
     """
 
-    auth_url = AUTH_URL_US
     responseCls = CloudFilesResponse
     rawResponseCls = CloudFilesRawResponse
+
+    auth_url = AUTH_URL
+    _auth_version = '2.0'
 
     def __init__(self, user_id, key, secure=True, **kwargs):
         super(CloudFilesConnection, self).__init__(user_id, key, secure=secure,
@@ -116,9 +116,10 @@ class CloudFilesConnection(OpenStackBaseConnection):
             self.service_region = self._ex_force_service_region
 
     def get_endpoint(self):
-        # First, we parse out both files and cdn endpoints
-        # for each auth version
+        region = self._ex_force_service_region.upper()
+
         if '2.0' in self._auth_version:
+<<<<<<< HEAD
             eps = self.service_catalog.get_endpoints(
                 service_type='object-store',
                 name='cloudFiles')
@@ -128,11 +129,25 @@ class CloudFilesConnection(OpenStackBaseConnection):
         elif ('1.1' in self._auth_version) or ('1.0' in self._auth_version):
             eps = self.service_catalog.get_endpoints(name='cloudFiles')
             cdn_eps = self.service_catalog.get_endpoints(name='cloudFilesCDN')
+=======
+            ep = self.service_catalog.get_endpoint(
+                service_type='object-store',
+                name='cloudFiles',
+                region=region)
+            cdn_ep = self.service_catalog.get_endpoint(
+                service_type='object-store',
+                name='cloudFilesCDN',
+                region=region)
+        else:
+            raise LibcloudError(
+                'Auth version "%s" not supported' % (self._auth_version))
+>>>>>>> refs/remotes/nimbusproject/trunk
 
         # if this is a CDN request, return the cdn url instead
         if self.cdn_request:
-            eps = cdn_eps
+            ep = cdn_ep
 
+<<<<<<< HEAD
         if self.service_region:
             _eps = []
             for ep in eps:
@@ -141,9 +156,11 @@ class CloudFilesConnection(OpenStackBaseConnection):
             eps = _eps
 
         if len(eps) == 0:
+=======
+        if not ep:
+>>>>>>> refs/remotes/nimbusproject/trunk
             raise LibcloudError('Could not find specified endpoint')
 
-        ep = eps[0]
         if 'publicURL' in ep:
             return ep['publicURL']
         else:
@@ -167,22 +184,6 @@ class CloudFilesConnection(OpenStackBaseConnection):
             params=params, data=data,
             method=method, headers=headers,
             raw=raw)
-
-
-class CloudFilesUSConnection(CloudFilesConnection):
-    """
-    Connection class for the Cloudfiles US endpoint.
-    """
-
-    auth_url = AUTH_URL_US
-
-
-class CloudFilesUKConnection(CloudFilesConnection):
-    """
-    Connection class for the Cloudfiles UK endpoint.
-    """
-
-    auth_url = AUTH_URL_UK
 
 
 class CloudFilesSwiftConnection(CloudFilesConnection):
@@ -212,10 +213,7 @@ class CloudFilesSwiftConnection(CloudFilesConnection):
 
 class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
     """
-    Base CloudFiles driver.
-
-    You should never create an instance of this class directly but use US/US
-    class.
+    CloudFiles driver.
     """
     name = 'CloudFiles'
     website = 'http://www.rackspace.com/'
@@ -224,11 +222,25 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
     hash_type = 'md5'
     supports_chunked_encoding = True
 
-    def __init__(self, *args, **kwargs):
-        OpenStackDriverMixin.__init__(self, *args, **kwargs)
-        super(CloudFilesStorageDriver, self).__init__(*args, **kwargs)
+    def __init__(self, key, secret=None, secure=True, host=None, port=None,
+                 region='ord', **kwargs):
+        """
+        @inherits:  :class:`StorageDriver.__init__`
 
-    def list_containers(self):
+        :param region: ID of the region which should be used.
+        :type region: ``str``
+        """
+        # This is here for backard compatibility
+        if 'ex_force_service_region' in kwargs:
+            region = kwargs['ex_force_service_region']
+
+        OpenStackDriverMixin.__init__(self, (), **kwargs)
+        super(CloudFilesStorageDriver, self).__init__(key=key, secret=secret,
+                                                      secure=secure, host=host,
+                                                      port=port, region=region,
+                                                      **kwargs)
+
+    def iterate_containers(self):
         response = self.connection.request('')
 
         if response.status == httplib.NO_CONTENT:
@@ -238,12 +250,18 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
 
         raise LibcloudError('Unexpected status code: %s' % (response.status))
 
+<<<<<<< HEAD
     def list_container_objects(self, container):
         value_dict = {'container': container}
         return LazyList(get_more=self._get_more, value_dict=value_dict)
 
     def get_container(self, container_name):
         response = self.connection.request('/%s' % (container_name),
+=======
+    def get_container(self, container_name):
+        container_name_encoded = self._encode_container_name(container_name)
+        response = self.connection.request('/%s' % (container_name_encoded),
+>>>>>>> refs/remotes/nimbusproject/trunk
                                            method='HEAD')
 
         if response.status == httplib.NO_CONTENT:
@@ -257,8 +275,16 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
 
     def get_object(self, container_name, object_name):
         container = self.get_container(container_name)
+<<<<<<< HEAD
         response = self.connection.request('/%s/%s' % (container_name,
                                                        object_name),
+=======
+        container_name_encoded = self._encode_container_name(container_name)
+        object_name_encoded = self._encode_object_name(object_name)
+
+        response = self.connection.request('/%s/%s' % (container_name_encoded,
+                                                       object_name_encoded),
+>>>>>>> refs/remotes/nimbusproject/trunk
                                            method='HEAD')
         if response.status in [httplib.OK, httplib.NO_CONTENT]:
             obj = self._headers_to_object(
@@ -291,10 +317,17 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
 
     def enable_container_cdn(self, container, ex_ttl=None):
         """
+<<<<<<< HEAD
         @inherits: L{StorageDriver.enable_container_cdn}
 
         @param ex_ttl: cache time to live
         @type ex_ttl: C{int}
+=======
+        @inherits: :class:`StorageDriver.enable_container_cdn`
+
+        :param ex_ttl: cache time to live
+        :type ex_ttl: ``int``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         container_name = container.name
         headers = {'X-CDN-Enabled': 'True'}
@@ -310,9 +343,9 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
         return response.status in [httplib.CREATED, httplib.ACCEPTED]
 
     def create_container(self, container_name):
-        container_name = self._clean_container_name(container_name)
+        container_name_encoded = self._encode_container_name(container_name)
         response = self.connection.request(
-            '/%s' % (container_name), method='PUT')
+            '/%s' % (container_name_encoded), method='PUT')
 
         if response.status == httplib.CREATED:
             # Accepted mean that container is not yet created but it will be
@@ -329,7 +362,7 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
         raise LibcloudError('Unexpected status code: %s' % (response.status))
 
     def delete_container(self, container):
-        name = self._clean_container_name(container.name)
+        name = self._encode_container_name(container.name)
 
         # Only empty container can be deleted
         response = self.connection.request('/%s' % (name), method='DELETE')
@@ -404,8 +437,8 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
                                 extra=extra, iterator=iterator)
 
     def delete_object(self, obj):
-        container_name = self._clean_container_name(obj.container.name)
-        object_name = self._clean_object_name(obj.name)
+        container_name = self._encode_container_name(obj.container.name)
+        object_name = self._encode_object_name(obj.name)
 
         response = self.connection.request(
             '/%s/%s' % (container_name, object_name), method='DELETE')
@@ -418,11 +451,35 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
 
         raise LibcloudError('Unexpected status code: %s' % (response.status))
 
+    def ex_purge_object_from_cdn(self, obj, email=None):
+        """
+        Purge edge cache for the specified object.
+
+        :param email: Email where a notification will be sent when the job
+        completes. (optional)
+        :type email: ``str``
+        """
+        container_name = self._encode_container_name(obj.container.name)
+        object_name = self._encode_object_name(obj.name)
+        headers = {'X-Purge-Email': email} if email else {}
+
+        response = self.connection.request('/%s/%s' % (container_name,
+                                                       object_name),
+                                           method='DELETE',
+                                           headers=headers,
+                                           cdn_request=True)
+
+        return response.status == httplib.NO_CONTENT
+
     def ex_get_meta_data(self):
         """
         Get meta data
 
+<<<<<<< HEAD
         @rtype: C{dict}
+=======
+        :rtype: ``dict``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         response = self.connection.request('', method='HEAD')
 
@@ -469,6 +526,7 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
         """
         Enable serving a static website.
 
+<<<<<<< HEAD
         @param container: Container instance
         @type container: L{Container}
 
@@ -477,6 +535,16 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
         @type index_file: C{str}
 
         @rtype: C{bool}
+=======
+        :param container: Container instance
+        :type container: :class:`Container`
+
+        :param index_file: Name of the object which becomes an index page for
+        every sub-directory in this container.
+        :type index_file: ``str``
+
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         container_name = container.name
         headers = {'X-Container-Meta-Web-Index': index_file}
@@ -493,6 +561,7 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
         Set a custom error page which is displayed if file is not found and
         serving of a static website is enabled.
 
+<<<<<<< HEAD
         @param container: Container instance
         @type container: L{Container}
 
@@ -500,6 +569,15 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
         @type file_name: C{str}
 
         @rtype: C{bool}
+=======
+        :param container: Container instance
+        :type container: :class:`Container`
+
+        :param file_name: Name of the object which becomes the error page.
+        :type file_name: ``str``
+
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         container_name = container.name
         headers = {'X-Container-Meta-Web-Error': file_name}
@@ -516,10 +594,17 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
         Set the metadata header X-Account-Meta-Temp-URL-Key on your Cloud
         Files account.
 
+<<<<<<< HEAD
         @param key: X-Account-Meta-Temp-URL-Key
         @type key: C{str}
 
         @rtype: C{bool}
+=======
+        :param key: X-Account-Meta-Temp-URL-Key
+        :type key: ``str``
+
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         headers = {'X-Account-Meta-Temp-URL-Key': key}
 
@@ -538,6 +623,7 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
         wish.  This method is specifically for allowing users to retrieve
         or update an object.
 
+<<<<<<< HEAD
         @param obj: The object that you wish to make temporarily public
         @type obj: L{Object}
 
@@ -549,6 +635,19 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
         @type timeout: C{int}
 
         @rtype: C{bool}
+=======
+        :param obj: The object that you wish to make temporarily public
+        :type obj: :class:`Object`
+
+        :param method: Which method you would like to allow, 'PUT' or 'GET'
+        :type method: ``str``
+
+        :param timeout: Time (in seconds) after which you want the TempURL
+        to expire.
+        :type timeout: ``int``
+
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         self.connection._populate_hosts_and_request_paths()
         expires = int(time() + timeout)
@@ -593,14 +692,19 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
         extra = extra or {}
         meta_data = extra.get('meta_data')
 
-        container_name_cleaned = self._clean_container_name(container.name)
-        object_name_cleaned = self._clean_object_name(object_name)
-        request_path = '/%s/%s' % (container_name_cleaned, object_name_cleaned)
+        container_name_encoded = self._encode_container_name(container.name)
+        object_name_encoded = self._encode_object_name(object_name)
+        request_path = '/%s/%s' % (container_name_encoded, object_name_encoded)
 
         headers = {'X-Auth-Token': self.connection.auth_token,
                    'X-Object-Manifest': '%s/%s/' %
+<<<<<<< HEAD
                                         (container_name_cleaned,
                                          object_name_cleaned)}
+=======
+                                        (container_name_encoded,
+                                         object_name_encoded)}
+>>>>>>> refs/remotes/nimbusproject/trunk
 
         data = ''
         response = self.connection.request(request_path,
@@ -627,13 +731,14 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
 
         return obj
 
-    def _get_more(self, last_key, value_dict):
-        container = value_dict['container']
-        params = {}
+    def list_container_objects(self, container, ex_prefix=None):
+        """
+        Return a list of objects for the given container.
 
-        if last_key:
-            params['marker'] = last_key
+        :param container: Container instance.
+        :type container: :class:`Container`
 
+<<<<<<< HEAD
         response = self.connection.request('/%s' % (container.name),
                                            params=params)
 
@@ -643,21 +748,62 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
         elif response.status == httplib.OK:
             objects = self._to_object_list(json.loads(response.body),
                                            container)
+=======
+        :param ex_prefix: Only get objects with names starting with ex_prefix
+        :type ex_prefix: ``str``
 
-            # TODO: Is this really needed?
-            if len(objects) == 0:
-                return [], None, True
+        :return: A list of Object instances.
+        :rtype: ``list`` of :class:`Object`
+        """
+        return list(self.iterate_container_objects(container,
+                                                   ex_prefix=ex_prefix))
+>>>>>>> refs/remotes/nimbusproject/trunk
 
-            return objects, objects[-1].name, False
+    def iterate_container_objects(self, container, ex_prefix=None):
+        """
+        Return a generator of objects for the given container.
 
-        raise LibcloudError('Unexpected status code: %s' % (response.status))
+        :param container: Container instance
+        :type container: :class:`Container`
+
+        :param ex_prefix: Only get objects with names starting with ex_prefix
+        :type ex_prefix: ``str``
+
+        :return: A generator of Object instances.
+        :rtype: ``generator`` of :class:`Object`
+        """
+        params = {}
+        if ex_prefix:
+            params['prefix'] = ex_prefix
+
+        while True:
+            response = self.connection.request('/%s' % (container.name),
+                                               params=params)
+
+            if response.status == httplib.NO_CONTENT:
+                # Empty or non-existent container
+                break
+            elif response.status == httplib.OK:
+                objects = self._to_object_list(json.loads(response.body),
+                                               container)
+
+                if len(objects) == 0:
+                    break
+
+                for obj in objects:
+                    yield obj
+                params['marker'] = obj.name
+
+            else:
+                raise LibcloudError('Unexpected status code: %s' %
+                                    (response.status))
 
     def _put_object(self, container, object_name, upload_func,
                     upload_func_kwargs, extra=None, file_path=None,
                     iterator=None, verify_hash=True):
         extra = extra or {}
-        container_name_cleaned = self._clean_container_name(container.name)
-        object_name_cleaned = self._clean_object_name(object_name)
+        container_name_encoded = self._encode_container_name(container.name)
+        object_name_encoded = self._encode_object_name(object_name)
         content_type = extra.get('content_type', None)
         meta_data = extra.get('meta_data', None)
 
@@ -667,7 +813,11 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
                 key = 'X-Object-Meta-%s' % (key)
                 headers[key] = value
 
+<<<<<<< HEAD
         request_path = '/%s/%s' % (container_name_cleaned, object_name_cleaned)
+=======
+        request_path = '/%s/%s' % (container_name_encoded, object_name_encoded)
+>>>>>>> refs/remotes/nimbusproject/trunk
         result_dict = self._upload_object(
             object_name=object_name, content_type=content_type,
             upload_func=upload_func, upload_func_kwargs=upload_func_kwargs,
@@ -701,9 +851,9 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
             raise LibcloudError('status_code=%s' % (response.status),
                                 driver=self)
 
-    def _clean_container_name(self, name):
+    def _encode_container_name(self, name):
         """
-        Clean container name.
+        Encode container name so it can be used as part of the HTTP request.
         """
         if name.startswith('/'):
             name = name[1:]
@@ -721,21 +871,23 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
 
         return name
 
-    def _clean_object_name(self, name):
+    def _encode_object_name(self, name):
         name = urlquote(name)
         return name
 
     def _to_container_list(self, response):
         # @TODO: Handle more then 10k containers - use "lazy list"?
-        containers = []
-
         for container in response:
             extra = {'object_count': int(container['count']),
                      'size': int(container['bytes'])}
+<<<<<<< HEAD
             containers.append(Container(name=container['name'], extra=extra,
                                         driver=self))
 
         return containers
+=======
+            yield Container(name=container['name'], extra=extra, driver=self)
+>>>>>>> refs/remotes/nimbusproject/trunk
 
     def _to_object_list(self, response, container):
         objects = []
@@ -780,7 +932,9 @@ class CloudFilesStorageDriver(StorageDriver, OpenStackDriverMixin):
         return obj
 
     def _ex_connection_class_kwargs(self):
-        return self.openstack_connection_kwargs()
+        kwargs = self.openstack_connection_kwargs()
+        kwargs['ex_force_service_region'] = self.region
+        return kwargs
 
 
 class CloudFilesUSStorageDriver(CloudFilesStorageDriver):
@@ -790,7 +944,10 @@ class CloudFilesUSStorageDriver(CloudFilesStorageDriver):
 
     type = Provider.CLOUDFILES_US
     name = 'CloudFiles (US)'
-    connectionCls = CloudFilesUSConnection
+
+    def __init__(self, *args, **kwargs):
+        kwargs['region'] = 'ord'
+        super(CloudFilesUSStorageDriver, self).__init__(*args, **kwargs)
 
 
 class CloudFilesSwiftStorageDriver(CloudFilesStorageDriver):
@@ -819,7 +976,10 @@ class CloudFilesUKStorageDriver(CloudFilesStorageDriver):
 
     type = Provider.CLOUDFILES_UK
     name = 'CloudFiles (UK)'
-    connectionCls = CloudFilesUKConnection
+
+    def __init__(self, *args, **kwargs):
+        kwargs['region'] = 'lon'
+        super(CloudFilesUKStorageDriver, self).__init__(*args, **kwargs)
 
 
 class FileChunkReader(object):
@@ -871,7 +1031,11 @@ class ChunkStreamReader(object):
             raise StopIteration
 
         block_size = self.chunk_size
+<<<<<<< HEAD
         if self.bytes_read + block_size >\
+=======
+        if self.bytes_read + block_size > \
+>>>>>>> refs/remotes/nimbusproject/trunk
                 self.end_block - self.start_block:
             block_size = self.end_block - self.start_block - self.bytes_read
             self.stop_iteration = True

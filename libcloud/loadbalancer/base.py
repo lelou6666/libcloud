@@ -90,10 +90,9 @@ class LoadBalancer(object):
 
 class Driver(BaseDriver):
     """
-    A base LBDriver class to derive from
+    A base Driver class to derive from
 
     This class is always subclassed by a specific driver.
-
     """
 
     connectionCls = ConnectionKey
@@ -109,7 +108,11 @@ class Driver(BaseDriver):
         """
         Return a list of supported protocols.
 
+<<<<<<< HEAD
         @rtype: C{list} of C{str}
+=======
+        :rtype: ``list`` of ``str``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'list_protocols not implemented for this driver')
@@ -118,7 +121,11 @@ class Driver(BaseDriver):
         """
         List all loadbalancers
 
+<<<<<<< HEAD
         @rtype: C{list} of L{LoadBalancer}
+=======
+        :rtype: ``list`` of :class:`LoadBalancer`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'list_balancers not implemented for this driver')
@@ -127,6 +134,7 @@ class Driver(BaseDriver):
         """
         Create a new load balancer instance
 
+<<<<<<< HEAD
         @param name: Name of the new load balancer (required)
         @type  name: C{str}
 
@@ -143,18 +151,45 @@ class Driver(BaseDriver):
         @type algorithm: L{Algorithm}
 
         @rtype: L{LoadBalancer}
+=======
+        :param name: Name of the new load balancer (required)
+        :type  name: ``str``
+
+        :param port: Port the load balancer should listen on, defaults to 80
+        :type  port: ``str``
+
+        :param protocol: Loadbalancer protocol, defaults to http.
+        :type  protocol: ``str``
+
+        :param members: list of Members to attach to balancer
+        :type  members: ``list`` of :class:`Member`
+
+        :param algorithm: Load balancing algorithm, defaults to ROUND_ROBIN.
+        :type algorithm: :class:`Algorithm`
+
+        :rtype: :class:`LoadBalancer`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'create_balancer not implemented for this driver')
 
     def destroy_balancer(self, balancer):
-        """Destroy a load balancer
+        """
+        Destroy a load balancer
 
+<<<<<<< HEAD
         @param balancer: LoadBalancer which should be used
         @type  balancer: L{LoadBalancer}
 
         @return: True if the destroy was successful, otherwise False
         @rtype: C{bool}
+=======
+        :param balancer: LoadBalancer which should be used
+        :type  balancer: :class:`LoadBalancer`
+
+        :return: ``True`` if the destroy was successful, otherwise ``False``.
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         raise NotImplementedError(
@@ -162,12 +197,21 @@ class Driver(BaseDriver):
 
     def get_balancer(self, balancer_id):
         """
+<<<<<<< HEAD
         Return a L{LoadBalancer} object.
 
         @param balancer_id: id of a load balancer you want to fetch
         @type  balancer_id: C{str}
 
         @rtype: L{LoadBalancer}
+=======
+        Return a :class:`LoadBalancer` object.
+
+        :param balancer_id: id of a load balancer you want to fetch
+        :type  balancer_id: ``str``
+
+        :rtype: :class:`LoadBalancer`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         raise NotImplementedError(
@@ -177,6 +221,7 @@ class Driver(BaseDriver):
         """
         Sets the name, algorithm, protocol, or port on a load balancer.
 
+<<<<<<< HEAD
         @param   balancer: LoadBalancer which should be used
         @type    balancer: L{LoadBalancer}
 
@@ -193,6 +238,24 @@ class Driver(BaseDriver):
         @type    port: C{int}
 
         @rtype: L{LoadBalancer}
+=======
+        :param   balancer: LoadBalancer which should be used
+        :type    balancer: :class:`LoadBalancer`
+
+        :param name: New load balancer name
+        :type    name: ``str``
+
+        :param algorithm: New load balancer algorithm
+        :type    algorithm: :class:`Algorithm`
+
+        :param protocol: New load balancer protocol
+        :type    protocol: ``str``
+
+        :param port: New load balancer port
+        :type    port: ``int``
+
+        :rtype: :class:`LoadBalancer`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         raise NotImplementedError(
             'update_balancer not implemented for this driver')
@@ -201,6 +264,7 @@ class Driver(BaseDriver):
         """
         Attach a compute node as a member to the load balancer.
 
+<<<<<<< HEAD
         @param balancer: LoadBalancer which should be used
         @type  balancer: L{LoadBalancer}
 
@@ -214,11 +278,26 @@ class Driver(BaseDriver):
         return self.balancer_attach_member(balancer, Member(id=None,
                                                             ip=node.public_ips[0],
                                                             port=balancer.port))
+=======
+        :param balancer: LoadBalancer which should be used
+        :type  balancer: :class:`LoadBalancer`
+
+        :param node: Node to join to the balancer
+        :type  node: :class:`Node`
+
+        :return: Member after joining the balancer.
+        :rtype: :class:`Member`
+        """
+
+        member = Member(id=None, ip=node.public_ips[0], port=balancer.port)
+        return self.balancer_attach_member(balancer, member)
+>>>>>>> refs/remotes/nimbusproject/trunk
 
     def balancer_attach_member(self, balancer, member):
         """
         Attach a member to balancer
 
+<<<<<<< HEAD
         @param balancer: LoadBalancer which should be used
         @type  balancer: L{LoadBalancer}
 
@@ -227,6 +306,16 @@ class Driver(BaseDriver):
 
         @return: Member after joining the balancer.
         @rtype: L{Member}
+=======
+        :param balancer: LoadBalancer which should be used
+        :type  balancer: :class:`LoadBalancer`
+
+        :param member: Member to join to the balancer
+        :type member: :class:`Member`
+
+        :return: Member after joining the balancer.
+        :rtype: :class:`Member`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         raise NotImplementedError(
@@ -236,6 +325,7 @@ class Driver(BaseDriver):
         """
         Detach member from balancer
 
+<<<<<<< HEAD
         @param balancer: LoadBalancer which should be used
         @type  balancer: L{LoadBalancer}
 
@@ -244,6 +334,16 @@ class Driver(BaseDriver):
 
         @return: True if member detach was successful, otherwise False
         @rtype: C{bool}
+=======
+        :param balancer: LoadBalancer which should be used
+        :type  balancer: :class:`LoadBalancer`
+
+        :param member: Member which should be used
+        :type member: :class:`Member`
+
+        :return: ``True`` if member detach was successful, otherwise ``False``.
+        :rtype: ``bool``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         raise NotImplementedError(
@@ -253,10 +353,17 @@ class Driver(BaseDriver):
         """
         Return list of members attached to balancer
 
+<<<<<<< HEAD
         @param balancer: LoadBalancer which should be used
         @type  balancer: L{LoadBalancer}
 
         @rtype: C{list} of L{Member}
+=======
+        :param balancer: LoadBalancer which should be used
+        :type  balancer: :class:`LoadBalancer`
+
+        :rtype: ``list`` of :class:`Member`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         raise NotImplementedError(
@@ -264,7 +371,12 @@ class Driver(BaseDriver):
 
     def _value_to_algorithm(self, value):
         """
-        Return C{LBAlgorithm} based on the value.
+        Return :class`Algorithm` based on the value.
+
+        :param value: Algorithm name (e.g. http, tcp, ...).
+        :type  value: ``str``
+
+        @rype :class:`Algorithm`
         """
         try:
             return self._VALUE_TO_ALGORITHM_MAP[value]
@@ -274,7 +386,12 @@ class Driver(BaseDriver):
 
     def _algorithm_to_value(self, algorithm):
         """
-        Return value based in the algorithm (C{LBAlgorithm}).
+        Return string value for the provided algorithm.
+
+        :param value: Algorithm enum.
+        :type  value: :class:`Algorithm`
+
+        @rype ``str``
         """
         try:
             return self._ALGORITHM_TO_VALUE_MAP[algorithm]
@@ -286,6 +403,10 @@ class Driver(BaseDriver):
         """
         Return algorithms supported by this driver.
 
+<<<<<<< HEAD
         @rtype: C{list} of C{str}
+=======
+        :rtype: ``list`` of ``str``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         return list(self._ALGORITHM_TO_VALUE_MAP.keys())

@@ -28,6 +28,12 @@
                         "tenantId": "MossoCloudFS_11111-111111111-1111111111-1111111",
                         "publicURL": "https://storage101.ord1.clouddrive.com/v1/MossoCloudFS_11111-111111111-1111111111-1111111",
                         "internalURL": "https://snet-storage101.ord1.clouddrive.com/v1/MossoCloudFS_11111-111111111-1111111111-1111111"
+                    },
+                    {
+                        "region": "LON",
+                        "tenantId": "MossoCloudFS_11111-111111111-1111111111-1111111",
+                        "publicURL": "https://storage101.lon1.clouddrive.com/v1/MossoCloudFS_11111-111111111-1111111111-1111111",
+                        "internalURL": "https://snet-storage101.lon1.clouddrive.com/v1/MossoCloudFS_11111-111111111-1111111111-1111111"
                     }
                 ],
                 "name": "cloudFiles",
@@ -79,7 +85,35 @@
                         "versionInfo": "https://ord.servers.api.rackspacecloud.com/v2/",
                         "versionList": "https://ord.servers.api.rackspacecloud.com/",
                         "versionId": "2"
+<<<<<<< HEAD
+=======
+                    },
+                    {
+                        "region": "IAD",
+                        "tenantId": "613469",
+                        "publicURL": "https://iad.servers.api.rackspacecloud.com/v2/1337",
+                        "versionInfo": "https://iad.servers.api.rackspacecloud.com/v2/",
+                        "versionList": "https://iad.servers.api.rackspacecloud.com/",
+                        "versionId": "2"
+                    },
+                    {
+                        "region": "SYD",
+                        "tenantId": "613469",
+                        "publicURL": "https://syd.servers.api.rackspacecloud.com/v2/1337",
+                        "versionInfo": "https://syd.servers.api.rackspacecloud.com/v2/",
+                        "versionList": "https://syd.servers.api.rackspacecloud.com/",
+                        "versionId": "2"
+                    },
+                    {
+                        "region": "HKG",
+                        "tenantId": "613469",
+                        "publicURL": "https://hkg.servers.api.rackspacecloud.com/v2/1337",
+                        "versionInfo": "https://hkg.servers.api.rackspacecloud.com/v2/",
+                        "versionList": "https://hkg.servers.api.rackspacecloud.com/",
+                        "versionId": "2"
+>>>>>>> refs/remotes/nimbusproject/trunk
                     }
+
                 ],
                 "name": "cloudServersOpenStack",
                 "type": "compute"

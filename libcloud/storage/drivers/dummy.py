@@ -96,11 +96,19 @@ class DummyStorageDriver(StorageDriver):
 
     def __init__(self, api_key, api_secret):
         """
+<<<<<<< HEAD
         @param    api_key:    API key or username to used (required)
         @type     api_key:    C{str}
         @param    api_secret: Secret password to be used (required)
         @type     api_secret: C{str}
         @rtype: C{None}
+=======
+        :param    api_key:    API key or username to used (required)
+        :type     api_key:    ``str``
+        :param    api_secret: Secret password to be used (required)
+        :type     api_secret: ``str``
+        :rtype: ``None``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
         self._containers = {}
 
@@ -113,10 +121,20 @@ class DummyStorageDriver(StorageDriver):
         0
         >>> driver.get_meta_data()['bytes_used']
         0
+<<<<<<< HEAD
         >>> container = driver.create_container(container_name='test container 1')
         >>> container = driver.create_container(container_name='test container 2')
         >>> obj = container.upload_object_via_stream(
         ...  object_name='test object', iterator=DummyFileObject(5, 10), extra={})
+=======
+        >>> container_name = 'test container 1'
+        >>> container = driver.create_container(container_name=container_name)
+        >>> container_name = 'test container 2'
+        >>> container = driver.create_container(container_name=container_name)
+        >>> obj = container.upload_object_via_stream(
+        ...  object_name='test object', iterator=DummyFileObject(5, 10),
+        ...  extra={})
+>>>>>>> refs/remotes/nimbusproject/trunk
         >>> driver.get_meta_data()['object_count']
         1
         >>> driver.get_meta_data()['container_count']
@@ -124,7 +142,11 @@ class DummyStorageDriver(StorageDriver):
         >>> driver.get_meta_data()['bytes_used']
         50
 
+<<<<<<< HEAD
         @rtype: C{dict}
+=======
+        :rtype: ``dict``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         container_count = len(self._containers)
@@ -141,32 +163,39 @@ class DummyStorageDriver(StorageDriver):
                 'object_count': int(object_count),
                 'bytes_used': int(bytes_used)}
 
-    def list_containers(self):
+    def iterate_containers(self):
         """
         >>> driver = DummyStorageDriver('key', 'secret')
-        >>> driver.list_containers()
+        >>> list(driver.iterate_containers())
         []
-        >>> container = driver.create_container(container_name='test container 1')
+        >>> container_name = 'test container 1'
+        >>> container = driver.create_container(container_name=container_name)
         >>> container
         <Container: name=test container 1, provider=Dummy Storage Provider>
         >>> container.name
         'test container 1'
-        >>> container = driver.create_container(container_name='test container 2')
+        >>> container_name = 'test container 2'
+        >>> container = driver.create_container(container_name=container_name)
         >>> container
         <Container: name=test container 2, provider=Dummy Storage Provider>
         >>> container = driver.create_container(
-        ...  container_name='test container 2') #doctest: +IGNORE_EXCEPTION_DETAIL
+        ...  container_name='test container 2')
+        ... #doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
         ContainerAlreadyExistsError:
-        >>> container_list=driver.list_containers()
-        >>> sorted([container.name for container in container_list])
+        >>> container_list=list(driver.iterate_containers())
+        >>> sorted([c.name for c in container_list])
         ['test container 1', 'test container 2']
 
+<<<<<<< HEAD
         @inherits: L{StorageDriver.list_containers}
+=======
+        @inherits: :class:`StorageDriver.iterate_containers`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
-        return [container['container'] for container in
-                list(self._containers.values())]
+        for container in list(self._containers.values()):
+            yield container['container']
 
     def list_container_objects(self, container):
         container = self.get_container(container.name)
@@ -179,7 +208,8 @@ class DummyStorageDriver(StorageDriver):
         >>> driver.get_container('unknown') #doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
         ContainerDoesNotExistError:
-        >>> container = driver.create_container(container_name='test container 1')
+        >>> container_name = 'test container 1'
+        >>> container = driver.create_container(container_name=container_name)
         >>> container
         <Container: name=test container 1, provider=Dummy Storage Provider>
         >>> container.name
@@ -187,7 +217,11 @@ class DummyStorageDriver(StorageDriver):
         >>> driver.get_container('test container 1')
         <Container: name=test container 1, provider=Dummy Storage Provider>
 
+<<<<<<< HEAD
         @inherits: L{StorageDriver.get_container}
+=======
+        @inherits: :class:`StorageDriver.get_container`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         if container_name not in self._containers:
@@ -202,7 +236,8 @@ class DummyStorageDriver(StorageDriver):
         >>> driver.get_container('unknown') #doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
         ContainerDoesNotExistError:
-        >>> container = driver.create_container(container_name='test container 1')
+        >>> container_name = 'test container 1'
+        >>> container = driver.create_container(container_name=container_name)
         >>> container
         <Container: name=test container 1, provider=Dummy Storage Provider>
         >>> container.name
@@ -210,7 +245,11 @@ class DummyStorageDriver(StorageDriver):
         >>> container.get_cdn_url()
         'http://www.test.com/container/test_container_1'
 
+<<<<<<< HEAD
         @inherits: L{StorageDriver.get_container_cdn_url}
+=======
+        @inherits: :class:`StorageDriver.get_container_cdn_url`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         if container.name not in self._containers:
@@ -222,10 +261,19 @@ class DummyStorageDriver(StorageDriver):
     def get_object(self, container_name, object_name):
         """
         >>> driver = DummyStorageDriver('key', 'secret')
+<<<<<<< HEAD
         >>> driver.get_object('unknown', 'unknown') #doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
         ContainerDoesNotExistError:
         >>> container = driver.create_container(container_name='test container 1')
+=======
+        >>> driver.get_object('unknown', 'unknown')
+        ... #doctest: +IGNORE_EXCEPTION_DETAIL
+        Traceback (most recent call last):
+        ContainerDoesNotExistError:
+        >>> container_name = 'test container 1'
+        >>> container = driver.create_container(container_name=container_name)
+>>>>>>> refs/remotes/nimbusproject/trunk
         >>> container
         <Container: name=test container 1, provider=Dummy Storage Provider>
         >>> driver.get_object(
@@ -234,10 +282,19 @@ class DummyStorageDriver(StorageDriver):
         ObjectDoesNotExistError:
         >>> obj = container.upload_object_via_stream(object_name='test object',
         ...      iterator=DummyFileObject(5, 10), extra={})
+<<<<<<< HEAD
         >>> obj
         <Object: name=test object, size=50, hash=None, provider=Dummy Storage Provider ...>
 
         @inherits: L{StorageDriver.get_object}
+=======
+        >>> obj.name
+        'test object'
+        >>> obj.size
+        50
+
+        @inherits: :class:`StorageDriver.get_object`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         self.get_container(container_name)
@@ -251,6 +308,7 @@ class DummyStorageDriver(StorageDriver):
     def get_object_cdn_url(self, obj):
         """
         >>> driver = DummyStorageDriver('key', 'secret')
+<<<<<<< HEAD
         >>> container = driver.create_container(container_name='test container 1')
         >>> container
         <Container: name=test container 1, provider=Dummy Storage Provider>
@@ -270,20 +328,49 @@ class DummyStorageDriver(StorageDriver):
             raise ObjectDoesNotExistError(object_name=obj.name, value=None,
                                           driver=self)
 
+=======
+        >>> container_name = 'test container 1'
+        >>> container = driver.create_container(container_name=container_name)
+        >>> container
+        <Container: name=test container 1, provider=Dummy Storage Provider>
+        >>> obj = container.upload_object_via_stream(
+        ...      object_name='test object 5',
+        ...      iterator=DummyFileObject(5, 10), extra={})
+        >>> obj.name
+        'test object 5'
+        >>> obj.get_cdn_url()
+        'http://www.test.com/object/test_object_5'
+
+        @inherits: :class:`StorageDriver.get_object_cdn_url`
+        """
+
+        container_name = obj.container.name
+        container_objects = self._containers[container_name]['objects']
+        if obj.name not in container_objects:
+            raise ObjectDoesNotExistError(object_name=obj.name, value=None,
+                                          driver=self)
+
+>>>>>>> refs/remotes/nimbusproject/trunk
         return container_objects[obj.name].meta_data['cdn_url']
 
     def create_container(self, container_name):
         """
         >>> driver = DummyStorageDriver('key', 'secret')
-        >>> container = driver.create_container(container_name='test container 1')
+        >>> container_name = 'test container 1'
+        >>> container = driver.create_container(container_name=container_name)
         >>> container
         <Container: name=test container 1, provider=Dummy Storage Provider>
         >>> container = driver.create_container(
-        ...    container_name='test container 1') #doctest: +IGNORE_EXCEPTION_DETAIL
+        ...    container_name='test container 1')
+        ... #doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
         ContainerAlreadyExistsError:
 
+<<<<<<< HEAD
         @inherits: L{StorageDriver.create_container}
+=======
+        @inherits: :class:`StorageDriver.create_container`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         if container_name in self._containers:
@@ -296,7 +383,12 @@ class DummyStorageDriver(StorageDriver):
         self._containers[container_name] = {'container': container,
                                             'objects': {},
                                             'cdn_url':
+<<<<<<< HEAD
                                             'http://www.test.com/container/%s' %
+=======
+                                            'http://www.test.com/container/%s'
+                                            %
+>>>>>>> refs/remotes/nimbusproject/trunk
                                             (container_name.replace(' ', '_'))
                                             }
         return container
@@ -306,11 +398,13 @@ class DummyStorageDriver(StorageDriver):
         >>> driver = DummyStorageDriver('key', 'secret')
         >>> container = Container(name = 'test container',
         ...    extra={'object_count': 0}, driver=driver)
-        >>> driver.delete_container(container=container)#doctest: +IGNORE_EXCEPTION_DETAIL
+        >>> driver.delete_container(container=container)
+        ... #doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
         ContainerDoesNotExistError:
         >>> container = driver.create_container(
-        ...      container_name='test container 1') #doctest: +IGNORE_EXCEPTION_DETAIL
+        ...      container_name='test container 1')
+        ... #doctest: +IGNORE_EXCEPTION_DETAIL
         >>> len(driver._containers)
         1
         >>> driver.delete_container(container=container)
@@ -318,14 +412,21 @@ class DummyStorageDriver(StorageDriver):
         >>> len(driver._containers)
         0
         >>> container = driver.create_container(
-        ...    container_name='test container 1') #doctest: +IGNORE_EXCEPTION_DETAIL
+        ...    container_name='test container 1')
+        ... #doctest: +IGNORE_EXCEPTION_DETAIL
         >>> obj = container.upload_object_via_stream(
-        ...   object_name='test object', iterator=DummyFileObject(5, 10), extra={})
-        >>> driver.delete_container(container=container)#doctest: +IGNORE_EXCEPTION_DETAIL
+        ...   object_name='test object', iterator=DummyFileObject(5, 10),
+        ...   extra={})
+        >>> driver.delete_container(container=container)
+        ... #doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
         ContainerIsNotEmptyError:
 
+<<<<<<< HEAD
         @inherits: L{StorageDriver.delete_container}
+=======
+        @inherits: :class:`StorageDriver.delete_container`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         container_name = container.name
@@ -355,14 +456,19 @@ class DummyStorageDriver(StorageDriver):
         """
         >>> driver = DummyStorageDriver('key', 'secret')
         >>> container = driver.create_container(
-        ...   container_name='test container 1') #doctest: +IGNORE_EXCEPTION_DETAIL
+        ...   container_name='test container 1')
+        ... #doctest: +IGNORE_EXCEPTION_DETAIL
         >>> obj = container.upload_object_via_stream(object_name='test object',
         ...    iterator=DummyFileObject(5, 10), extra={})
         >>> stream = container.download_object_as_stream(obj)
         >>> stream #doctest: +ELLIPSIS
         <...closed...>
 
+<<<<<<< HEAD
         @inherits: L{StorageDriver.download_object_as_stream}
+=======
+        @inherits: :class:`StorageDriver.download_object_as_stream`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         return DummyFileObject()
@@ -371,22 +477,30 @@ class DummyStorageDriver(StorageDriver):
                       file_hash=None):
         """
         >>> driver = DummyStorageDriver('key', 'secret')
-        >>> container = driver.create_container(container_name='test container 1')
+        >>> container_name = 'test container 1'
+        >>> container = driver.create_container(container_name=container_name)
         >>> container.upload_object(file_path='/tmp/inexistent.file',
         ...     object_name='test') #doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
         LibcloudError:
         >>> file_path = path = os.path.abspath(__file__)
         >>> file_size = os.path.getsize(file_path)
-        >>> obj = container.upload_object(file_path=file_path, object_name='test')
+        >>> obj = container.upload_object(file_path=file_path,
+        ...                               object_name='test')
         >>> obj #doctest: +ELLIPSIS
         <Object: name=test, size=...>
         >>> obj.size == file_size
         True
 
+<<<<<<< HEAD
         @inherits: L{StorageDriver.upload_object}
         @param file_hash: File hash
         @type file_hash: C{str}
+=======
+        @inherits: :class:`StorageDriver.upload_object`
+        :param file_hash: File hash
+        :type file_hash: ``str``
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         if not os.path.exists(file_path):
@@ -402,13 +516,19 @@ class DummyStorageDriver(StorageDriver):
         """
         >>> driver = DummyStorageDriver('key', 'secret')
         >>> container = driver.create_container(
-        ...    container_name='test container 1') #doctest: +IGNORE_EXCEPTION_DETAIL
+        ...    container_name='test container 1')
+        ... #doctest: +IGNORE_EXCEPTION_DETAIL
         >>> obj = container.upload_object_via_stream(
-        ...   object_name='test object', iterator=DummyFileObject(5, 10), extra={})
+        ...   object_name='test object', iterator=DummyFileObject(5, 10),
+        ...   extra={})
         >>> obj #doctest: +ELLIPSIS
         <Object: name=test object, size=50, ...>
 
+<<<<<<< HEAD
         @inherits: L{StorageDriver.upload_object_via_stream}
+=======
+        @inherits: :class:`StorageDriver.upload_object_via_stream`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         size = len(iterator)
@@ -419,7 +539,8 @@ class DummyStorageDriver(StorageDriver):
         """
         >>> driver = DummyStorageDriver('key', 'secret')
         >>> container = driver.create_container(
-        ...   container_name='test container 1') #doctest: +IGNORE_EXCEPTION_DETAIL
+        ...   container_name='test container 1')
+        ... #doctest: +IGNORE_EXCEPTION_DETAIL
         >>> obj = container.upload_object_via_stream(object_name='test object',
         ...   iterator=DummyFileObject(5, 10), extra={})
         >>> obj #doctest: +ELLIPSIS
@@ -433,7 +554,11 @@ class DummyStorageDriver(StorageDriver):
         Traceback (most recent call last):
         ObjectDoesNotExistError:
 
+<<<<<<< HEAD
         @inherits: L{StorageDriver.delete_object}
+=======
+        @inherits: :class:`StorageDriver.delete_object`
+>>>>>>> refs/remotes/nimbusproject/trunk
         """
 
         container_name = obj.container.name

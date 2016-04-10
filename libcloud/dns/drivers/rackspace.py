@@ -25,7 +25,7 @@ import copy
 from libcloud.common.base import PollingConnection
 from libcloud.common.types import LibcloudError
 from libcloud.utils.misc import merge_valid_keys, get_new_obj
-from libcloud.common.rackspace import AUTH_URL_US, AUTH_URL_UK
+from libcloud.common.rackspace import AUTH_URL
 from libcloud.compute.drivers.openstack import OpenStack_1_1_Connection
 from libcloud.compute.drivers.openstack import OpenStack_1_1_Response
 
@@ -34,7 +34,7 @@ from libcloud.dns.types import ZoneDoesNotExistError, RecordDoesNotExistError
 from libcloud.dns.base import DNSDriver, Zone, Record
 
 VALID_ZONE_EXTRA_PARAMS = ['email', 'comment', 'ns1']
-VALID_RECORD_EXTRA_PARAMS = ['ttl', 'comment']
+VALID_RECORD_EXTRA_PARAMS = ['ttl', 'comment', 'priority']
 
 
 class RackspaceDNSResponse(OpenStack_1_1_Response):
@@ -77,6 +77,13 @@ class RackspaceDNSConnection(OpenStack_1_1_Connection, PollingConnection):
     poll_interval = 2.5
     timeout = 30
 
+    auth_url = AUTH_URL
+    _auth_version = '2.0'
+
+    def __init__(self, *args, **kwargs):
+            self.region = kwargs.pop('region', None)
+            super(RackspaceDNSConnection, self).__init__(*args, **kwargs)
+
     def get_poll_request_kwargs(self, response, context, request_kwargs):
         job_id = response.object['jobId']
         kwargs = {'action': '/status/%s' % (job_id),
@@ -92,6 +99,7 @@ class RackspaceDNSConnection(OpenStack_1_1_Connection, PollingConnection):
         return status == 'COMPLETED'
 
     def get_endpoint(self):
+<<<<<<< HEAD
         """
         FIXME:
         Dirty, dirty hack. DNS doesn't get returned in the auth 1.1 service
@@ -115,27 +123,53 @@ class RackspaceDNSConnection(OpenStack_1_1_Connection, PollingConnection):
     def _construct_dns_endpoint_from_servers_endpoint(self, ep):
         if 'publicURL' in ep:
             return ep['publicURL'].replace("servers", "dns")
+=======
+        if '2.0' in self._auth_version:
+            ep = self.service_catalog.get_endpoint(name='cloudDNS',
+                                                   service_type='rax:dns',
+                                                   region=None)
+>>>>>>> refs/remotes/nimbusproject/trunk
         else:
-            raise LibcloudError('Could not find specified endpoint')
+            raise LibcloudError("Auth version %s not supported" %
+                                (self._auth_version))
 
+        public_url = ep.get('publicURL', None)
 
-class RackspaceUSDNSConnection(RackspaceDNSConnection):
-    auth_url = AUTH_URL_US
+        # This is a nasty hack, but because of how global auth and old accounts
+        # work, there is no way around it.
+        if self.region == 'us':
+            # Old UK account, which only has us endpoint in the catalog
+            public_url = public_url.replace('https://lon.dns.api',
+                                            'https://dns.api')
+        if self.region == 'uk':
+            # Old US account, which only has uk endpoint in the catalog
+            public_url = public_url.replace('https://dns.api',
+                                            'https://lon.dns.api')
 
-
-class RackspaceUKDNSConnection(RackspaceDNSConnection):
-    auth_url = AUTH_URL_UK
+        return public_url
 
 
 class RackspaceDNSDriver(DNSDriver, OpenStackDriverMixin):
+    name = 'Rackspace DNS'
     website = 'http://www.rackspace.com/'
+    type = Provider.RACKSPACE
+    connectionCls = RackspaceDNSConnection
 
+<<<<<<< HEAD
     def __init__(self, *args, **kwargs):
         OpenStackDriverMixin.__init__(self, *args, **kwargs)
         super(RackspaceDNSDriver, self).__init__(*args, **kwargs)
+=======
+    def __init__(self, key, secret=None, secure=True, host=None, port=None,
+                 region='us', **kwargs):
+        if region not in ['us', 'uk']:
+            raise ValueError('Invalid region: %s' % (region))
+>>>>>>> refs/remotes/nimbusproject/trunk
 
-    def _ex_connection_class_kwargs(self):
-        return self.openstack_connection_kwargs()
+        OpenStackDriverMixin.__init__(self, **kwargs)
+        super(RackspaceDNSDriver, self).__init__(key=key, secret=secret,
+                                                 host=host, port=port,
+                                                 region=region)
 
     RECORD_TYPE_MAP = {
         RecordType.A: 'A',
@@ -241,6 +275,9 @@ class RackspaceDNSDriver(DNSDriver, OpenStackDriverMixin):
         if 'ttl' in extra:
             data['ttl'] = int(extra['ttl'])
 
+        if 'priority' in extra:
+            data['priority'] = int(extra['priority'])
+
         payload = {'records': [data]}
         self.connection.set_context({'resource': 'zone', 'id': zone.id})
         response = self.connection.async_request(action='/domains/%s/records'
@@ -340,11 +377,9 @@ class RackspaceDNSDriver(DNSDriver, OpenStackDriverMixin):
         record_data = data['data']
         extra = {'fqdn': fqdn}
 
-        if 'ttl' in data:
-            extra['ttl'] = data['ttl']
-
-        if 'comment' in data:
-            extra['comment'] = data['comment']
+        for key in VALID_RECORD_EXTRA_PARAMS:
+            if key in data:
+                extra[key] = data[key]
 
         record = Record(id=str(id), name=name, type=type, data=record_data,
                         zone=zone, driver=self, extra=extra)
@@ -354,11 +389,11 @@ class RackspaceDNSDriver(DNSDriver, OpenStackDriverMixin):
         """
         Build a FQDN from a domain and record name.
 
-        @param domain: Domain name.
-        @type domain: C{str}
+        :param domain: Domain name.
+        :type domain: ``str``
 
-        @param name: Record name.
-        @type name: C{str}
+        :param name: Record name.
+        :type name: ``str``
         """
         if name:
             name = '%s.%s' % (name, domain)
@@ -371,23 +406,34 @@ class RackspaceDNSDriver(DNSDriver, OpenStackDriverMixin):
         """
         Strip domain portion from the record name.
 
-        @param domain: Domain name.
-        @type domain: C{str}
+        :param domain: Domain name.
+        :type domain: ``str``
 
-        @param name: Full record name (fqdn).
-        @type name: C{str}
+        :param name: Full record name (fqdn).
+        :type name: ``str``
         """
         name = name.replace('.%s' % (domain), '')
         return name
+
+    def _ex_connection_class_kwargs(self):
+        kwargs = self.openstack_connection_kwargs()
+        kwargs['region'] = self.region
+        return kwargs
 
 
 class RackspaceUSDNSDriver(RackspaceDNSDriver):
     name = 'Rackspace DNS (US)'
     type = Provider.RACKSPACE_US
-    connectionCls = RackspaceUSDNSConnection
+
+    def __init__(self, *args, **kwargs):
+        kwargs['region'] = 'us'
+        super(RackspaceUSDNSDriver, self).__init__(*args, **kwargs)
 
 
 class RackspaceUKDNSDriver(RackspaceDNSDriver):
     name = 'Rackspace DNS (UK)'
     type = Provider.RACKSPACE_UK
-    connectionCls = RackspaceUKDNSConnection
+
+    def __init__(self, *args, **kwargs):
+        kwargs['region'] = 'uk'
+        super(RackspaceUKDNSDriver, self).__init__(*args, **kwargs)

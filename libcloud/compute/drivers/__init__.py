@@ -18,6 +18,7 @@ Drivers for working with different providers
 """
 
 __all__ = [
+    'abiquo',
     'brightbox',
     'bluebox',
     'dummy',
@@ -26,7 +27,9 @@ __all__ = [
     'elasticstack',
     'elastichosts',
     'cloudsigma',
+    'gce',
     'gogrid',
+    'hostvirtual',
     'ibm_sce',
     'linode',
     'opennebula',

@@ -13,14 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+__all__ = [
+    'get_driver',
+    'set_driver',
+    'merge_valid_keys',
+    'get_new_obj',
+    'str2dicts',
+    'dict2str',
+    'reverse_dict',
+    'lowercase_keys'
+]
+
+import sys
+
 
 def get_driver(drivers, provider):
     """
     Get a driver.
 
-    @param drivers: Dictionary containing valid providers.
-    @param provider: Id of provider to get driver
-    @type provider: L{libcloud.types.Provider}
+    :param drivers: Dictionary containing valid providers.
+    :param provider: Id of provider to get driver
+    :type provider: :class:`libcloud.types.Provider`
     """
     if provider in drivers:
         mod_name, driver_name = drivers[provider]
@@ -28,6 +41,35 @@ def get_driver(drivers, provider):
         return getattr(_mod, driver_name)
 
     raise AttributeError('Provider %s does not exist' % (provider))
+
+
+def set_driver(drivers, provider, module, klass):
+    """
+    Sets a driver.
+
+    :param drivers: Dictionary to store providers.
+    :param provider: Id of provider to set driver for
+    :type provider: :class:`libcloud.types.Provider`
+    :param module: The module which contains the driver
+    :type module: L
+    :param klass: The driver class name
+    :type klass:
+    """
+
+    if provider in drivers:
+        raise AttributeError('Provider %s already registered' % (provider))
+
+    drivers[provider] = (module, klass)
+
+    # Check if this driver is valid
+    try:
+        driver = get_driver(drivers, provider)
+    except (ImportError, AttributeError):
+        exp = sys.exc_info()[1]
+        drivers.pop(provider)
+        raise exp
+
+    return driver
 
 
 def merge_valid_keys(params, valid_keys, extra):
@@ -175,7 +217,7 @@ def dict2str(data):
     """
     result = ''
     for k in data:
-        if data[k] != None:
+        if data[k] is not None:
             result += '%s %s\n' % (str(k), str(data[k]))
         else:
             result += '%s\n' % str(k)

@@ -18,20 +18,14 @@ import unittest
 
 from libcloud.utils.py3 import httplib
 from libcloud.utils.py3 import urlparse
+from libcloud.utils.py3 import parse_qsl
 
 try:
     import simplejson as json
 except ImportError:
     import json
 
-try:
-    parse_qsl = urlparse.parse_qsl
-except AttributeError:
-    import cgi
-    parse_qsl = cgi.parse_qsl
-
 from libcloud.compute.drivers.ktucloud import KTUCloudNodeDriver
-from libcloud.compute.types import DeploymentError, LibcloudError
 
 from libcloud.test import MockHttpTestCase
 from libcloud.test.compute import TestCaseMixin
@@ -39,12 +33,13 @@ from libcloud.test.file_fixtures import ComputeFileFixtures
 
 
 class KTUCloudNodeDriverTest(unittest.TestCase, TestCaseMixin):
+
     def setUp(self):
         KTUCloudNodeDriver.connectionCls.conn_classes = \
             (None, KTUCloudStackMockHttp)
         self.driver = KTUCloudNodeDriver('apikey', 'secret',
-                                           path='/test/path',
-                                           host='api.dummy.com')
+                                         path='/test/path',
+                                         host='api.dummy.com')
         self.driver.path = '/test/path'
         self.driver.type = -1
         KTUCloudStackMockHttp.fixture_tag = 'default'
@@ -74,7 +69,7 @@ class KTUCloudNodeDriverTest(unittest.TestCase, TestCaseMixin):
         KTUCloudStackMockHttp.fixture_tag = 'notemplates'
 
         images = self.driver.list_images()
-        self.assertEquals(0, len(images))
+        self.assertEqual(0, len(images))
 
 
 class KTUCloudStackMockHttp(MockHttpTestCase):

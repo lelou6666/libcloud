@@ -68,7 +68,7 @@ class LibcloudHTTPSConnection(httplib.HTTPSConnection):
 
         ca_certs_available = [cert
                               for cert in libcloud.security.CA_CERTS_PATH
-                              if os.path.exists(cert)]
+                              if os.path.exists(cert) and os.path.isfile(cert)]
         if ca_certs_available:
             # use first available certificate
             self.ca_cert = ca_certs_available[0]
@@ -123,7 +123,11 @@ class LibcloudHTTPSConnection(httplib.HTTPSConnection):
         # replace . with literal .
         # http://www.dns.net/dnsrd/trick.html#legal-hostnames
         valid_patterns = [
+<<<<<<< HEAD
             re.compile('^' + pattern.replace(r".", r"\.") \
+=======
+            re.compile('^' + pattern.replace(r".", r"\.")
+>>>>>>> refs/remotes/nimbusproject/trunk
                                     .replace(r"*", r"[0-9A-Za-z\-]+") + '$')
             for pattern in (set(common_name) | set(alt_names))]
 

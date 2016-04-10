@@ -13,15 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 import random
-import unittest
-
-from cgi import parse_qs
 
 from libcloud.utils.py3 import httplib
 from libcloud.utils.py3 import StringIO
 from libcloud.utils.py3 import urlparse
+from libcloud.utils.py3 import parse_qs
 from libcloud.utils.py3 import u
+from libcloud.utils.py3 import unittest2_required
+
+if unittest2_required:
+    import unittest2 as unittest
+else:
+    import unittest
 
 
 XML_HEADERS = {'content-type': 'application/xml'}
@@ -48,6 +53,7 @@ class LibcloudTestCase(unittest.TestCase):
         self.assertEqual(actual, expected,
                          'expected %d, but %d mock methods were executed'
                          % (expected, actual))
+
 
 class multipleresponse(object):
     """
@@ -76,14 +82,23 @@ class MockResponse(object):
     reason = ''
     version = 11
 
-    def __init__(self, status, body, headers=None, reason=None):
+    def __init__(self, status, body=None, headers=None, reason=None):
         self.status = status
-        self.body = StringIO(u(body))
+        self.body = StringIO(u(body)) if body else StringIO()
         self.headers = headers or self.headers
         self.reason = reason or self.reason
 
     def read(self, *args, **kwargs):
         return self.body.read(*args, **kwargs)
+
+    def next(self):
+        if sys.version_info >= (2, 5) and sys.version_info <= (2, 6):
+            return self.body.next()
+        else:
+            return next(self.body)
+
+    def __next__(self):
+        return self.next()
 
     def getheader(self, name, *args, **kwargs):
         return self.headers.get(name, *args, **kwargs)
@@ -94,8 +109,10 @@ class MockResponse(object):
     def msg(self):
         raise NotImplemented
 
+
 class BaseMockHttpObject(object):
     def _get_method_name(self, type, use_param, qs, path):
+        path = path.split('?')[0]
         meth_name = path.replace('/', '_').replace('.', '_').replace('-', '_')
         if type:
             meth_name = '%s_%s' % (meth_name, self.type)
@@ -103,6 +120,7 @@ class BaseMockHttpObject(object):
             param = qs[self.use_param][0].replace('.', '_').replace('-', '_')
             meth_name = '%s_%s' % (meth_name, param)
         return meth_name
+
 
 class MockHttp(BaseMockHttpObject):
     """
@@ -140,9 +158,9 @@ class MockHttp(BaseMockHttpObject):
     response = None
 
     type = None
-    use_param = None # will use this param to namespace the request function
+    use_param = None  # will use this param to namespace the request function
 
-    test = None # TestCase instance which is using this mock
+    test = None  # TestCase instance which is using this mock
 
     def __init__(self, host, port, *args, **kwargs):
         self.host = host
@@ -191,6 +209,7 @@ class MockHttp(BaseMockHttpObject):
         return (httplib.FORBIDDEN, 'Oh Noes!', {'X-Foo': 'fail'},
                 httplib.responses[httplib.FORBIDDEN])
 
+
 class MockHttpTestCase(MockHttp, unittest.TestCase):
     # Same as the MockHttp class, but you can also use assertions in the
     # classes which inherit from this one.
@@ -202,6 +221,7 @@ class MockHttpTestCase(MockHttp, unittest.TestCase):
 
     def runTest(self):
         pass
+
 
 class StorageMockHttp(MockHttp):
     def putrequest(self, method, action):
@@ -215,6 +235,7 @@ class StorageMockHttp(MockHttp):
 
     def send(self, data):
         pass
+
 
 class MockRawResponse(BaseMockHttpObject):
     """
@@ -247,12 +268,12 @@ class MockRawResponse(BaseMockHttpObject):
         return self.next()
 
     def _generate_random_data(self, size):
-        data = []
+        data = ''
         current_size = 0
         while current_size < size:
             value = str(random.randint(0, 9))
             value_size = len(value)
-            data.append(value)
+            data += value
             current_size += value_size
 
         return data
@@ -286,7 +307,6 @@ class MockRawResponse(BaseMockHttpObject):
             self._status, self._body, self._headers, self._reason = result
             self._response = self.responseCls(self._status, self._body,
                                               self._headers, self._reason)
-            return self
         return self._response
 
 if __name__ == "__main__":
