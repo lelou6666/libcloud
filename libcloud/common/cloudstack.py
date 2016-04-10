@@ -16,14 +16,18 @@
 import base64
 import hashlib
 import hmac
-import time
-import urllib
+
+from libcloud.utils.py3 import urlencode
+from libcloud.utils.py3 import b
 
 from libcloud.common.base import ConnectionUserAndKey, PollingConnection
 from libcloud.common.base import JsonResponse
 from libcloud.common.types import MalformedResponseError
 
-class CloudStackResponse(JsonResponse): pass
+
+class CloudStackResponse(JsonResponse):
+    pass
+
 
 class CloudStackConnection(ConnectionUserAndKey, PollingConnection):
     responseCls = CloudStackResponse
@@ -36,12 +40,13 @@ class CloudStackConnection(ConnectionUserAndKey, PollingConnection):
     ASYNC_FAILURE = 2
 
     def _make_signature(self, params):
-        signature = [(k.lower(), v) for k, v in params.items()]
+        signature = [(k.lower(), v) for k, v in list(params.items())]
         signature.sort(key=lambda x: x[0])
-        signature = urllib.urlencode(signature)
+        signature = urlencode(signature)
         signature = signature.lower().replace('+', '%20')
-        signature = hmac.new(self.key, msg=signature, digestmod=hashlib.sha1)
-        return base64.b64encode(signature.digest())
+        signature = hmac.new(b(self.key), msg=b(signature),
+                             digestmod=hashlib.sha1)
+        return base64.b64encode(b(signature.digest()))
 
     def add_default_params(self, params):
         params['apiKey'] = self.user_id
@@ -58,18 +63,19 @@ class CloudStackConnection(ConnectionUserAndKey, PollingConnection):
         context = {'command': command}
         context.update(kwargs)
         result = super(CloudStackConnection, self).async_request(action=None,
-                                                               params=None,
-                                                               data=None,
-                                                               headers=None,
-                                                               method=None,
-                                                               context=context)
+                                                                 params=None,
+                                                                 data=None,
+                                                                 headers=None,
+                                                                 method=None,
+                                                                 context=
+                                                                 context)
         return result['jobresult']
 
     def get_request_kwargs(self, action, params=None, data='', headers=None,
                            method='GET', context=None):
         return context
 
-    def get_poll_request_kwargs(self, response, context):
+    def get_poll_request_kwargs(self, response, context, request_kwargs):
         job_id = response['jobid']
         kwargs = {'command': 'queryAsyncJobResult', 'jobid': job_id}
         return kwargs
@@ -78,7 +84,8 @@ class CloudStackConnection(ConnectionUserAndKey, PollingConnection):
         status = response.get('jobstatus', self.ASYNC_PENDING)
 
         if status == self.ASYNC_FAILURE:
-            raise Exception(status)
+            msg = response.get('jobresult', {}).get('errortext', status)
+            raise Exception(msg)
 
         return status == self.ASYNC_SUCCESS
 
@@ -96,6 +103,7 @@ class CloudStackConnection(ConnectionUserAndKey, PollingConnection):
                 driver=self.driver)
         result = result.object[command]
         return result
+
 
 class CloudStackDriverMixIn(object):
     host = None

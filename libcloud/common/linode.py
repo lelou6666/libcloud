@@ -16,6 +16,9 @@
 from libcloud.common.base import ConnectionKey, JsonResponse
 from libcloud.common.types import InvalidCredsError
 
+from libcloud.utils.py3 import PY3
+from libcloud.utils.py3 import b
+
 __all__ = [
     'API_HOST',
     'API_ROOT',
@@ -29,16 +32,16 @@ API_HOST = 'api.linode.com'
 API_ROOT = '/'
 
 # Constants that map a RAM figure to a PlanID (updated 6/28/10)
-LINODE_PLAN_IDS = {512:'1',
-                   768:'2',
-                  1024:'3',
-                  1536:'4',
-                  2048:'5',
-                  4096:'6',
-                  8192:'7',
-                 12288:'8',
-                 16384:'9',
-                 20480:'10'}
+LINODE_PLAN_IDS = {512: '1',
+                   768: '2',
+                   1024: '3',
+                   1536: '4',
+                   2048: '5',
+                   4096: '6',
+                   8192: '7',
+                   12288: '8',
+                   16384: '9',
+                   20480: '10'}
 
 
 class LinodeException(Exception):
@@ -77,9 +80,13 @@ class LinodeResponse(JsonResponse):
     def __init__(self, response, connection):
         """Instantiate a LinodeResponse from the HTTP response
 
-        @keyword response: The raw response returned by urllib
-        @return: parsed L{LinodeResponse}"""
-        self.body = response.read()
+        :keyword response: The raw response returned by urllib
+        :return: parsed :class:`LinodeResponse`"""
+        self.body = self._decompress_response(response=response)
+
+        if PY3:
+            self.body = b(self.body).decode('utf-8')
+
         self.status = response.status
         self.headers = dict(response.getheaders())
         self.error = response.reason
@@ -100,7 +107,7 @@ class LinodeResponse(JsonResponse):
         If the response chokes the parser, action and data will be returned as
         None and errorarray will indicate an invalid JSON exception.
 
-        @return: C{list} of objects and C{list} of errors"""
+        :return: ``list`` of objects and ``list`` of errors"""
         js = super(LinodeResponse, self).parse_body()
 
         try:
@@ -111,7 +118,7 @@ class LinodeResponse(JsonResponse):
             errs = []
             for obj in js:
                 if ("DATA" not in obj or "ERRORARRAY" not in obj
-                    or "ACTION" not in obj):
+                        or "ACTION" not in obj):
                     ret.append(None)
                     errs.append(self.invalid)
                     continue
@@ -127,14 +134,15 @@ class LinodeResponse(JsonResponse):
         The way we determine success is by the presence of an error in
         ERRORARRAY.  If one is there, we assume the whole request failed.
 
-        @return: C{bool} indicating a successful request"""
+        :return: ``bool`` indicating a successful request"""
         return len(self.errors) == 0
 
     def _make_excp(self, error):
         """Convert an API error to a LinodeException instance
 
-        @keyword error: JSON object containing C{ERRORCODE} and C{ERRORMESSAGE}
-        @type error: dict"""
+        :keyword error: JSON object containing ``ERRORCODE`` and
+        ``ERRORMESSAGE``
+        :type error: dict"""
         if "ERRORCODE" not in error or "ERRORMESSAGE" not in error:
             return None
         if error["ERRORCODE"] == 4:
@@ -143,17 +151,22 @@ class LinodeResponse(JsonResponse):
 
 
 class LinodeConnection(ConnectionKey):
-    """A connection to the Linode API
+    """
+    A connection to the Linode API
 
     Wraps SSL connections to the Linode API, automagically injecting the
-    parameters that the API needs for each request."""
+    parameters that the API needs for each request.
+    """
     host = API_HOST
     responseCls = LinodeResponse
 
     def add_default_params(self, params):
-        """Add parameters that are necessary for every request
+        """
+        Add parameters that are necessary for every request
 
-        This method adds C{api_key} and C{api_responseFormat} to the request."""
+        This method adds ``api_key`` and ``api_responseFormat`` to
+        the request.
+        """
         params["api_key"] = self.key
         # Be explicit about this in case the default changes.
         params["api_responseFormat"] = "json"

@@ -16,11 +16,18 @@
 """
 libcloud provides a unified interface to the cloud computing resources.
 
-@var __version__: Current version of libcloud
+:var __version__: Current version of libcloud
 """
 
+<<<<<<< HEAD
 __all__ = ["__version__", "enable_debug"]
 __version__ = '0.6.2'
+=======
+__all__ = ['__version__', 'enable_debug']
+__version__ = '0.14.0-beta2'
+
+import os
+>>>>>>> refs/remotes/nimbusproject/trunk
 
 try:
     import paramiko
@@ -33,16 +40,16 @@ def enable_debug(fo):
     """
     Enable library wide debugging to a file-like object.
 
-    @param fo: Where to append debugging information
-    @type fo: File like object, only write operations are used.
+    :param fo: Where to append debugging information
+    :type fo: File like object, only write operations are used.
     """
     from libcloud.common.base import (Connection,
-                               LoggingHTTPConnection,
-                               LoggingHTTPSConnection)
+                                      LoggingHTTPConnection,
+                                      LoggingHTTPSConnection)
     LoggingHTTPSConnection.log = fo
     LoggingHTTPConnection.log = fo
     Connection.conn_classes = (LoggingHTTPConnection,
-                                  LoggingHTTPSConnection)
+                               LoggingHTTPSConnection)
 
 
 def _init_once():
@@ -52,7 +59,6 @@ def _init_once():
     This checks for the LIBCLOUD_DEBUG enviroment variable, which if it exists
     is where we will log debug information about the provider transports.
     """
-    import os
     path = os.getenv('LIBCLOUD_DEBUG')
     if path:
         fo = open(path, 'a')

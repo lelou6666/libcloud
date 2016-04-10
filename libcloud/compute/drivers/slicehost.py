@@ -21,10 +21,13 @@ import socket
 from xml.etree import ElementTree as ET
 from xml.parsers.expat import ExpatError
 
+from libcloud.utils.py3 import b
+
 from libcloud.common.base import ConnectionKey, XmlResponse
 from libcloud.compute.types import NodeState, Provider, InvalidCredsError
 from libcloud.compute.base import NodeSize, NodeDriver, NodeImage, NodeLocation
 from libcloud.compute.base import Node, is_private_subnet
+
 
 class SlicehostResponse(XmlResponse):
     def parse_error(self):
@@ -33,9 +36,9 @@ class SlicehostResponse(XmlResponse):
 
         body = super(SlicehostResponse, self).parse_body()
         try:
-            return "; ".join([ err.text
-                               for err in
-                               body.findall('error') ])
+            return "; ".join([err.text
+                              for err in
+                              body.findall('error')])
         except ExpatError:
             return self.body
 
@@ -49,8 +52,8 @@ class SlicehostConnection(ConnectionKey):
     responseCls = SlicehostResponse
 
     def add_default_headers(self, headers):
-        headers['Authorization'] = ('Basic %s'
-                              % (base64.b64encode('%s:' % self.key)))
+        headers['Authorization'] = ('Basic %s' % (base64.b64encode(
+            b('%s:' % self.key))).decode('utf-8'))
         return headers
 
 
@@ -63,14 +66,15 @@ class SlicehostNodeDriver(NodeDriver):
 
     type = Provider.SLICEHOST
     name = 'Slicehost'
+    website = 'http://slicehost.com/'
 
     features = {"create_node": ["generates_password"]}
 
-    NODE_STATE_MAP = { 'active': NodeState.RUNNING,
-                       'build': NodeState.PENDING,
-                       'reboot': NodeState.REBOOTING,
-                       'hard_reboot': NodeState.REBOOTING,
-                       'terminated': NodeState.TERMINATED }
+    NODE_STATE_MAP = {'active': NodeState.RUNNING,
+                      'build': NodeState.PENDING,
+                      'reboot': NodeState.REBOOTING,
+                      'hard_reboot': NodeState.REBOOTING,
+                      'terminated': NodeState.TERMINATED}
 
     def list_nodes(self):
         return self._to_nodes(self.connection.request('/slices.xml').object)
@@ -115,8 +119,6 @@ class SlicehostNodeDriver(NodeDriver):
         return node
 
     def reboot_node(self, node):
-        """Reboot the node by passing in the node object"""
-
         # 'hard' could bubble up as kwarg depending on how reboot_node
         # turns out. Defaulting to soft reboot.
         #hard = False
@@ -138,6 +140,8 @@ class SlicehostNodeDriver(NodeDriver):
               <error>You must enable slice deletes in the SliceManager</error>
               <error>Permission denied</error>
             </errors>
+
+        @inherits: :class:`NodeDriver.destroy_node`
         """
         uri = '/slices/%s/destroy.xml' % (node.id)
         self.connection.request(uri, method='PUT')
@@ -145,14 +149,13 @@ class SlicehostNodeDriver(NodeDriver):
 
     def _to_nodes(self, object):
         if object.tag == 'slice':
-            return [ self._to_node(object) ]
+            return [self._to_node(object)]
         node_elements = object.findall('slice')
-        return [ self._to_node(el) for el in node_elements ]
+        return [self._to_node(el) for el in node_elements]
 
     def _to_node(self, element):
-
-        attrs = [ 'name', 'image-id', 'progress', 'id', 'bw-out', 'bw-in',
-                  'flavor-id', 'status', 'ip-address', 'root-password' ]
+        attrs = ['name', 'image-id', 'progress', 'id', 'bw-out', 'bw-in',
+                 'flavor-id', 'status', 'ip-address', 'root-password']
 
         node_attrs = {}
         for attr in attrs:
@@ -191,7 +194,7 @@ class SlicehostNodeDriver(NodeDriver):
         # for consistency with other drivers, we put this in two places.
         node_attrs['password'] = node_attrs['root-password']
         extra = {}
-        for k in node_attrs.keys():
+        for k in list(node_attrs.keys()):
             ek = k.replace("-", "_")
             extra[ek] = node_attrs[k]
         n = Node(id=element.findtext('id'),
@@ -205,28 +208,28 @@ class SlicehostNodeDriver(NodeDriver):
 
     def _to_sizes(self, object):
         if object.tag == 'flavor':
-            return [ self._to_size(object) ]
+            return [self._to_size(object)]
         elements = object.findall('flavor')
-        return [ self._to_size(el) for el in elements ]
+        return [self._to_size(el) for el in elements]
 
     def _to_size(self, element):
         s = NodeSize(id=int(element.findtext('id')),
                      name=str(element.findtext('name')),
                      ram=int(element.findtext('ram')),
-                     disk=None, # XXX: needs hardcode
-                     bandwidth=None, # XXX: needs hardcode
-                     price=float(element.findtext('price'))/(100*24*30),
+                     disk=None,  # XXX: needs hardcode
+                     bandwidth=None,  # XXX: needs hardcode
+                     price=float(element.findtext('price')) / (100 * 24 * 30),
                      driver=self.connection.driver)
         return s
 
     def _to_images(self, object):
         if object.tag == 'image':
-            return [ self._to_image(object) ]
+            return [self._to_image(object)]
         elements = object.findall('image')
-        return [ self._to_image(el) for el in elements ]
+        return [self._to_image(el) for el in elements]
 
     def _to_image(self, element):
         i = NodeImage(id=int(element.findtext('id')),
-                     name=str(element.findtext('name')),
-                     driver=self.connection.driver)
+                      name=str(element.findtext('name')),
+                      driver=self.connection.driver)
         return i

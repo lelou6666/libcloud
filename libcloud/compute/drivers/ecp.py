@@ -18,9 +18,12 @@ Enomaly ECP driver
 """
 import time
 import base64
-import httplib
-import socket
 import os
+import socket
+import binascii
+
+from libcloud.utils.py3 import httplib
+from libcloud.utils.py3 import b
 
 # JSON is included in the standard library starting with Python 2.6.  For 2.5
 # and 2.4, there's a simplejson egg at: http://pypi.python.org/pypi/simplejson
@@ -37,10 +40,10 @@ from libcloud.compute.base import is_private_subnet
 
 #Defaults
 API_HOST = ''
-API_PORT = (80,443)
+API_PORT = (80, 443)
+
 
 class ECPResponse(Response):
-
     def success(self):
         if self.status == httplib.OK or self.status == httplib.CREATED:
             try:
@@ -69,6 +72,7 @@ class ECPResponse(Response):
     def getheaders(self):
         return self.headers
 
+
 class ECPConnection(ConnectionUserAndKey):
     """
     Connection class for the Enomaly ECP driver
@@ -82,10 +86,10 @@ class ECPConnection(ConnectionUserAndKey):
         #Authentication
         username = self.user_id
         password = self.key
-        base64string =  base64.encodestring(
-                '%s:%s' % (username, password))[:-1]
-        authheader =  "Basic %s" % base64string
-        headers['Authorization']= authheader
+        base64string = base64.encodestring(
+            b('%s:%s' % (username, password)))[:-1]
+        authheader = "Basic %s" % base64string
+        headers['Authorization'] = authheader
 
         return headers
 
@@ -97,7 +101,7 @@ class ECPConnection(ConnectionUserAndKey):
         #use a random boundary that does not appear in the fields
         boundary = ''
         while boundary in ''.join(fields):
-            boundary = os.urandom(16).encode('hex')
+            boundary = binascii.hexlify(os.urandom(16)).decode('utf-8')
         L = []
         for i in fields:
             L.append('--' + boundary)
@@ -108,7 +112,7 @@ class ECPConnection(ConnectionUserAndKey):
         L.append('')
         body = '\r\n'.join(L)
         content_type = 'multipart/form-data; boundary=%s' % boundary
-        header = {'Content-Type':content_type}
+        header = {'Content-Type': content_type}
         return header, body
 
 
@@ -118,27 +122,29 @@ class ECPNodeDriver(NodeDriver):
     """
 
     name = "Enomaly Elastic Computing Platform"
+    website = 'http://www.enomaly.com/'
     type = Provider.ECP
     connectionCls = ECPConnection
 
     def list_nodes(self):
         """
         Returns a list of all running Nodes
+
+        :rtype: ``list`` of :class:`Node`
         """
 
         #Make the call
         res = self.connection.request('/rest/hosting/vm/list').parse_body()
 
         #Put together a list of node objects
-        nodes=[]
+        nodes = []
         for vm in res['vms']:
             node = self._to_node(vm)
-            if not node == None:
+            if not node is None:
                 nodes.append(node)
 
         #And return it
         return nodes
-
 
     def _to_node(self, vm):
         """
@@ -151,7 +157,8 @@ class ECPNodeDriver(NodeDriver):
             return None
 
         #IPs
-        iplist = [interface['ip'] for interface in vm['interfaces']  if interface['ip'] != '127.0.0.1']
+        iplist = [interface['ip'] for interface in vm['interfaces'] if
+                  interface['ip'] != '127.0.0.1']
 
         public_ips = []
         private_ips = []
@@ -168,12 +175,21 @@ class ECPNodeDriver(NodeDriver):
 
         #Create the node object
         n = Node(
+<<<<<<< HEAD
           id=vm['uuid'],
           name=vm['name'],
           state=NodeState.RUNNING,
           public_ip=public_ips,
           private_ip=private_ips,
           driver=self,
+=======
+            id=vm['uuid'],
+            name=vm['name'],
+            state=NodeState.RUNNING,
+            public_ips=public_ips,
+            private_ips=private_ips,
+            driver=self,
+>>>>>>> refs/remotes/nimbusproject/trunk
         )
 
         return n
@@ -181,16 +197,18 @@ class ECPNodeDriver(NodeDriver):
     def reboot_node(self, node):
         """
         Shuts down a VM and then starts it again.
+
+        @inherits: :class:`NodeDriver.reboot_node`
         """
 
         #Turn the VM off
         #Black magic to make the POST requests work
-        d = self.connection._encode_multipart_formdata({'action':'stop'})
+        d = self.connection._encode_multipart_formdata({'action': 'stop'})
         self.connection.request(
-                   '/rest/hosting/vm/%s' % node.id,
-                   method='POST',
-                   headers=d[0],
-                   data=d[1]
+            '/rest/hosting/vm/%s' % node.id,
+            method='POST',
+            headers=d[0],
+            data=d[1]
         ).parse_body()
 
         node.state = NodeState.REBOOTING
@@ -198,17 +216,16 @@ class ECPNodeDriver(NodeDriver):
         while node.state == NodeState.REBOOTING:
             #Check if it's off.
             response = self.connection.request(
-                     '/rest/hosting/vm/%s' % node.id
-                     ).parse_body()
+                '/rest/hosting/vm/%s' % node.id
+            ).parse_body()
             if response['vm']['state'] == 'off':
                 node.state = NodeState.TERMINATED
             else:
                 time.sleep(5)
 
-
         #Turn the VM back on.
         #Black magic to make the POST requests work
-        d = self.connection._encode_multipart_formdata({'action':'start'})
+        d = self.connection._encode_multipart_formdata({'action': 'start'})
         self.connection.request(
             '/rest/hosting/vm/%s' % node.id,
             method='POST',
@@ -222,14 +239,16 @@ class ECPNodeDriver(NodeDriver):
     def destroy_node(self, node):
         """
         Shuts down and deletes a VM.
+
+        @inherits: :class:`NodeDriver.destroy_node`
         """
 
         #Shut down first
         #Black magic to make the POST requests work
-        d = self.connection._encode_multipart_formdata({'action':'stop'})
+        d = self.connection._encode_multipart_formdata({'action': 'stop'})
         self.connection.request(
             '/rest/hosting/vm/%s' % node.id,
-            method = 'POST',
+            method='POST',
             headers=d[0],
             data=d[1]
         ).parse_body()
@@ -240,8 +259,8 @@ class ECPNodeDriver(NodeDriver):
         while node.state == NodeState.PENDING:
             #Check if it's off.
             response = self.connection.request(
-                       '/rest/hosting/vm/%s' % node.id
-                       ).parse_body()
+                '/rest/hosting/vm/%s' % node.id
+            ).parse_body()
             if response['vm']['state'] == 'off':
                 node.state = NodeState.TERMINATED
             else:
@@ -249,7 +268,7 @@ class ECPNodeDriver(NodeDriver):
 
         #Delete the VM
         #Black magic to make the POST requests work
-        d = self.connection._encode_multipart_formdata({'action':'delete'})
+        d = self.connection._encode_multipart_formdata({'action': 'delete'})
         self.connection.request(
             '/rest/hosting/vm/%s' % (node.id),
             method='POST',
@@ -261,7 +280,9 @@ class ECPNodeDriver(NodeDriver):
 
     def list_images(self, location=None):
         """
-        Returns a list of all package templates aka appiances aka images
+        Returns a list of all package templates aka appiances aka images.
+
+        @inherits: :class:`NodeDriver.list_images`
         """
 
         #Make the call
@@ -272,17 +293,18 @@ class ECPNodeDriver(NodeDriver):
         images = []
         for ptemplate in response['packages']:
             images.append(NodeImage(
-                id = ptemplate['uuid'],
-                name= '%s: %s' % (ptemplate['name'], ptemplate['description']),
-                driver = self,
-                ))
+                id=ptemplate['uuid'],
+                name='%s: %s' % (ptemplate['name'], ptemplate['description']),
+                driver=self,)
+            )
 
         return images
-
 
     def list_sizes(self, location=None):
         """
         Returns a list of all hardware templates
+
+        @inherits: :class:`NodeDriver.list_sizes`
         """
 
         #Make the call
@@ -293,37 +315,49 @@ class ECPNodeDriver(NodeDriver):
         sizes = []
         for htemplate in response['templates']:
             sizes.append(NodeSize(
-                id = htemplate['uuid'],
-                name = htemplate['name'],
-                ram = htemplate['memory'],
-                disk = 0, #Disk is independent of hardware template
-                bandwidth = 0, #There is no way to keep track of bandwidth
-                price = 0, #The billing system is external
-                driver = self,
-                ))
+                id=htemplate['uuid'],
+                name=htemplate['name'],
+                ram=htemplate['memory'],
+                disk=0,  # Disk is independent of hardware template.
+                bandwidth=0,  # There is no way to keep track of bandwidth.
+                price=0,  # The billing system is external.
+                driver=self,)
+            )
 
         return sizes
 
     def list_locations(self):
         """
         This feature does not exist in ECP. Returns hard coded dummy location.
+
+        :rtype: ``list`` of :class:`NodeLocation`
         """
-        return [
-          NodeLocation(id=1,
-                       name="Cloud",
-                       country='',
-                       driver=self),
-        ]
+        return [NodeLocation(id=1,
+                             name="Cloud",
+                             country='',
+                             driver=self),
+                ]
 
     def create_node(self, **kwargs):
         """
         Creates a virtual machine.
 
-        Parameters: name (string), image (NodeImage), size (NodeSize)
+        :keyword    name:   String with a name for this new node (required)
+        :type       name:   ``str``
+
+        :keyword    size:   The size of resources allocated to this node .
+                            (required)
+        :type       size:   :class:`NodeSize`
+
+        :keyword    image:  OS Image to boot on node. (required)
+        :type       image:  :class:`NodeImage`
+
+        :rtype: :class:`Node`
         """
 
         #Find out what network to put the VM on.
-        res = self.connection.request('/rest/hosting/network/list').parse_body()
+        res = self.connection.request(
+            '/rest/hosting/network/list').parse_body()
 
         #Use the first / default network because there is no way to specific
         #which one
@@ -331,11 +365,11 @@ class ECPNodeDriver(NodeDriver):
 
         #Prepare to make the VM
         data = {
-            'name' : str(kwargs['name']),
-            'package' : str(kwargs['image'].id),
-            'hardware' : str(kwargs['size'].id),
-            'network_uuid' : str(network),
-            'disk' : ''
+            'name': str(kwargs['name']),
+            'package': str(kwargs['image'].id),
+            'hardware': str(kwargs['size'].id),
+            'network_uuid': str(network),
+            'disk': ''
         }
 
         #Black magic to make the POST requests work
@@ -343,7 +377,7 @@ class ECPNodeDriver(NodeDriver):
         response = self.connection.request(
             '/rest/hosting/vm/',
             method='PUT',
-            headers = d[0],
+            headers=d[0],
             data=d[1]
         ).parse_body()
 

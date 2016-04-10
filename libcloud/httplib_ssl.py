@@ -16,7 +16,6 @@
 Subclass for httplib.HTTPSConnection with optional certificate name
 verification, depending on libcloud.security settings.
 """
-import httplib
 import os
 import re
 import socket
@@ -24,6 +23,8 @@ import ssl
 import warnings
 
 import libcloud.security
+from libcloud.utils.py3 import httplib
+
 
 class LibcloudHTTPSConnection(httplib.HTTPSConnection):
     """LibcloudHTTPSConnection
@@ -67,16 +68,18 @@ class LibcloudHTTPSConnection(httplib.HTTPSConnection):
 
         ca_certs_available = [cert
                               for cert in libcloud.security.CA_CERTS_PATH
-                              if os.path.exists(cert)]
+                              if os.path.exists(cert) and os.path.isfile(cert)]
         if ca_certs_available:
             # use first available certificate
             self.ca_cert = ca_certs_available[0]
         else:
             if self.strict:
-                raise RuntimeError(libcloud.security.CA_CERTS_UNAVAILABLE_ERROR_MSG)
+                raise RuntimeError(
+                    libcloud.security.CA_CERTS_UNAVAILABLE_ERROR_MSG)
             else:
                 # no certificates found; toggle verify to False
-                warnings.warn(libcloud.security.CA_CERTS_UNAVAILABLE_WARNING_MSG)
+                warnings.warn(
+                    libcloud.security.CA_CERTS_UNAVAILABLE_WARNING_MSG)
                 self.ca_cert = None
                 self.verify = False
 
@@ -118,17 +121,11 @@ class LibcloudHTTPSConnection(httplib.HTTPSConnection):
 
         # replace * with alphanumeric and dash
         # replace . with literal .
+        # http://www.dns.net/dnsrd/trick.html#legal-hostnames
         valid_patterns = [
-            re.compile(
-                pattern.replace(
-                    r".", r"\."
-                ).replace(
-                    r"*", r"[0-9A-Za-z]+"
-                )
-            )
-            for pattern
-            in (set(common_name) | set(alt_names))
-        ]
+            re.compile('^' + pattern.replace(r".", r"\.")
+                                    .replace(r"*", r"[0-9A-Za-z\-]+") + '$')
+            for pattern in (set(common_name) | set(alt_names))]
 
         return any(
             pattern.search(hostname)

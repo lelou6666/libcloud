@@ -17,12 +17,9 @@ __all__ = [
     'LinodeDNSDriver'
 ]
 
-
-from libcloud.utils import merge_valid_keys, get_new_obj
+from libcloud.utils.misc import merge_valid_keys, get_new_obj
 from libcloud.common.linode import (API_ROOT, LinodeException,
-                                    LinodeConnection, LinodeResponse,
-                                    LINODE_PLAN_IDS)
-from libcloud.common.linode import API_HOST, API_ROOT, LinodeException
+                                    LinodeConnection, LinodeResponse)
 from libcloud.dns.types import Provider, RecordType
 from libcloud.dns.types import ZoneDoesNotExistError, RecordDoesNotExistError
 from libcloud.dns.base import DNSDriver, Zone, Record
@@ -34,14 +31,6 @@ VALID_ZONE_EXTRA_PARAMS = ['SOA_Email', 'Refresh_sec', 'Retry_sec',
 VALID_RECORD_EXTRA_PARAMS = ['Priority', 'Weight', 'Port', 'Protocol',
                              'TTL_sec']
 
-RECORD_TYPE_MAP = {
-    RecordType.A: 'A',
-    RecordType.AAAA: 'AAAA',
-    RecordType.CNAME: 'CNAME',
-    RecordType.TXT: 'TXT',
-    RecordType.SRV: 'SRV',
-}
-
 
 class LinodeDNSResponse(LinodeResponse):
     def _make_excp(self, error):
@@ -51,13 +40,13 @@ class LinodeDNSResponse(LinodeResponse):
 
             if context['resource'] == 'zone':
                 result = ZoneDoesNotExistError(value='',
-                                            driver=self.connection.driver,
-                                            zone_id=context['id'])
+                                               driver=self.connection.driver,
+                                               zone_id=context['id'])
 
             elif context['resource'] == 'record':
                 result = RecordDoesNotExistError(value='',
-                                            driver=self.connection.driver,
-                                            record_id=context['id'])
+                                                 driver=self.connection.driver,
+                                                 record_id=context['id'])
         return result
 
 
@@ -68,10 +57,18 @@ class LinodeDNSConnection(LinodeConnection):
 class LinodeDNSDriver(DNSDriver):
     type = Provider.LINODE
     name = 'Linode DNS'
+    website = 'http://www.linode.com/'
     connectionCls = LinodeDNSConnection
 
-    def list_record_types(self):
-        return RECORD_TYPE_MAP.keys()
+    RECORD_TYPE_MAP = {
+        RecordType.NS: 'NS',
+        RecordType.MX: 'MX',
+        RecordType.A: 'A',
+        RecordType.AAAA: 'AAAA',
+        RecordType.CNAME: 'CNAME',
+        RecordType.TXT: 'TXT',
+        RecordType.SRV: 'SRV',
+    }
 
     def list_zones(self):
         params = {'api_action': 'domain.list'}
@@ -101,7 +98,7 @@ class LinodeDNSDriver(DNSDriver):
     def get_record(self, zone_id, record_id):
         zone = self.get_zone(zone_id=zone_id)
         params = {'api_action': 'domain.resource.list', 'DomainID': zone_id,
-                   'ResourceID': record_id}
+                  'ResourceID': record_id}
         data = self.connection.request(API_ROOT, params=params).objects[0]
         records = self._to_records(items=data, zone=zone)
 
@@ -151,11 +148,11 @@ class LinodeDNSDriver(DNSDriver):
         merged = merge_valid_keys(params=params,
                                   valid_keys=VALID_ZONE_EXTRA_PARAMS,
                                   extra=extra)
-        data = self.connection.request(API_ROOT, params=params).objects[0]
+        self.connection.request(API_ROOT, params=params).objects[0]
         updated_zone = get_new_obj(obj=zone, klass=Zone,
-                                  attributes={'domain': domain,
-                                              'type': type, 'ttl': ttl,
-                                              'extra': merged})
+                                   attributes={'domain': domain,
+                                               'type': type, 'ttl': ttl,
+                                               'extra': merged})
         return updated_zone
 
     def create_record(self, name, zone, type, data, extra=None):
@@ -165,7 +162,8 @@ class LinodeDNSDriver(DNSDriver):
         API docs: http://www.linode.com/api/dns/domain.resource.create
         """
         params = {'api_action': 'domain.resource.create', 'DomainID': zone.id,
-                  'Name': name, 'Target': data, 'Type': RECORD_TYPE_MAP[type]}
+                  'Name': name, 'Target': data,
+                  'Type': self.RECORD_TYPE_MAP[type]}
         merged = merge_valid_keys(params=params,
                                   valid_keys=VALID_RECORD_EXTRA_PARAMS,
                                   extra=extra)
@@ -191,14 +189,14 @@ class LinodeDNSDriver(DNSDriver):
         if data:
             params['Target'] = data
 
-        if type:
-            params['Type'] = RECORD_TYPE_MAP[type]
+        if type is not None:
+            params['Type'] = self.RECORD_TYPE_MAP[type]
 
         merged = merge_valid_keys(params=params,
                                   valid_keys=VALID_RECORD_EXTRA_PARAMS,
                                   extra=extra)
 
-        result = self.connection.request(API_ROOT, params=params).objects[0]
+        self.connection.request(API_ROOT, params=params).objects[0]
         updated_record = get_new_obj(obj=record, klass=Record,
                                      attributes={'name': name, 'data': data,
                                                  'type': type,
@@ -240,7 +238,7 @@ class LinodeDNSDriver(DNSDriver):
         Build an Zone object from the item dictionary.
         """
         extra = {'SOA_Email': item['SOA_EMAIL'], 'status': item['STATUS'],
-                  'description': item['DESCRIPTION']}
+                 'description': item['DESCRIPTION']}
         zone = Zone(id=item['DOMAINID'], domain=item['DOMAIN'],
                     type=item['TYPE'], ttl=item['TTL_SEC'], driver=self,
                     extra=extra)
@@ -262,7 +260,7 @@ class LinodeDNSDriver(DNSDriver):
         Build a Record object from the item dictionary.
         """
         extra = {'protocol': item['PROTOCOL'], 'ttl_sec': item['TTL_SEC'],
-                  'port': item['PORT'], 'weight': item['WEIGHT']}
+                 'port': item['PORT'], 'weight': item['WEIGHT']}
         type = self._string_to_record_type(item['TYPE'])
         record = Record(id=item['RESOURCEID'], name=item['NAME'], type=type,
                         data=item['TARGET'], zone=zone, driver=self,

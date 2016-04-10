@@ -24,10 +24,11 @@ from libcloud.common.base import ConnectionKey, JsonResponse
 from libcloud.common.types import InvalidCredsError
 from libcloud.compute.types import Provider, NodeState
 from libcloud.compute.base import NodeDriver, NodeSize, Node, NodeLocation
-from libcloud.compute.base import NodeImage, NodeAuthPassword
+from libcloud.compute.base import NodeImage
 
 API_CONTEXT = '/r'
 API_HOST = 'rimuhosting.com'
+
 
 class RimuHostingException(Exception):
     """
@@ -39,6 +40,7 @@ class RimuHostingException(Exception):
 
     def __repr__(self):
         return "<RimuHostingException '%s'>" % (self.args[0])
+
 
 class RimuHostingResponse(JsonResponse):
     def __init__(self, response, connection):
@@ -59,14 +61,16 @@ class RimuHostingResponse(JsonResponse):
     def parse_body(self):
         try:
             js = super(RimuHostingResponse, self).parse_body()
-            if js[js.keys()[0]]['response_type'] == "ERROR":
+            keys = list(js.keys())
+            if js[keys[0]]['response_type'] == "ERROR":
                 raise RimuHostingException(
-                    js[js.keys()[0]]['human_readable_message']
+                    js[keys[0]]['human_readable_message']
                 )
-            return js[js.keys()[0]]
+            return js[keys[0]]
         except KeyError:
             raise RimuHostingException('Could not parse body: %s'
                                        % (self.body))
+
 
 class RimuHostingConnection(ConnectionKey):
     """
@@ -80,7 +84,7 @@ class RimuHostingConnection(ConnectionKey):
 
     def __init__(self, key, secure=True):
         # override __init__ so that we can set secure of False for testing
-        ConnectionKey.__init__(self,key,secure)
+        ConnectionKey.__init__(self, key, secure)
 
     def add_default_headers(self, headers):
         # We want JSON back from the server. Could be application/xml
@@ -90,9 +94,10 @@ class RimuHostingConnection(ConnectionKey):
         headers['Content-Type'] = 'application/json'
 
         headers['Authorization'] = 'rimuhosting apikey=%s' % (self.key)
-        return headers;
+        return headers
 
-    def request(self, action, params=None, data='', headers=None, method='GET'):
+    def request(self, action, params=None, data='', headers=None,
+                method='GET'):
         if not headers:
             headers = {}
         if not params:
@@ -101,6 +106,7 @@ class RimuHostingConnection(ConnectionKey):
         return ConnectionKey.request(self, self.api_context + action,
                                      params, data, headers, method)
 
+
 class RimuHostingNodeDriver(NodeDriver):
     """
     RimuHosting node driver
@@ -108,27 +114,48 @@ class RimuHostingNodeDriver(NodeDriver):
 
     type = Provider.RIMUHOSTING
     name = 'RimuHosting'
+    website = 'http://rimuhosting.com/'
     connectionCls = RimuHostingConnection
+    features = {'create_node': ['password']}
 
     def __init__(self, key, host=API_HOST, port=443,
                  api_context=API_CONTEXT, secure=True):
+        """
+        :param    key: API key (required)
+        :type     key: ``str``
+
+        :param    host: hostname for connection
+        :type     host: ``str``
+
+        :param    port: Override port used for connections.
+        :type     port: ``int``
+
+        :param    api_context: Optional API context.
+        :type     api_context: ``str``
+
+        :param    secure: Weither to use HTTPS or HTTP.
+        :type     secure: ``bool``
+
+        :rtype: ``None``
+        """
         # Pass in some extra vars so that
         self.key = key
         self.secure = secure
-        self.connection = self.connectionCls(key ,secure)
+        self.connection = self.connectionCls(key, secure)
         self.connection.host = host
         self.connection.api_context = api_context
         self.connection.port = port
         self.connection.driver = self
         self.connection.connect()
 
-    def _order_uri(self, node,resource):
+    def _order_uri(self, node, resource):
         # Returns the order uri with its resourse appended.
-        return "/orders/%s/%s" % (node.id,resource)
+        return "/orders/%s/%s" % (node.id, resource)
 
     # TODO: Get the node state.
     def _to_node(self, order):
         n = Node(id=order['slug'],
+<<<<<<< HEAD
                 name=order['domain_name'],
                 state=NodeState.RUNNING,
                 public_ip=(
@@ -139,9 +166,23 @@ class RimuHostingNodeDriver(NodeDriver):
                 driver=self.connection.driver,
                 extra={'order_oid': order['order_oid'],
                        'monthly_recurring_fee': order.get('billing_info').get('monthly_recurring_fee')})
+=======
+                 name=order['domain_name'],
+                 state=NodeState.RUNNING,
+                 public_ips=(
+                     [order['allocated_ips']['primary_ip']]
+                     + order['allocated_ips']['secondary_ips']
+                 ),
+                 private_ips=[],
+                 driver=self.connection.driver,
+                 extra={
+                     'order_oid': order['order_oid'],
+                     'monthly_recurring_fee': order.get(
+                         'billing_info').get('monthly_recurring_fee')})
+>>>>>>> refs/remotes/nimbusproject/trunk
         return n
 
-    def _to_size(self,plan):
+    def _to_size(self, plan):
         return NodeSize(
             id=plan['pricing_plan_code'],
             name=plan['pricing_plan_description'],
@@ -152,87 +193,92 @@ class RimuHostingNodeDriver(NodeDriver):
             driver=self.connection.driver
         )
 
-    def _to_image(self,image):
+    def _to_image(self, image):
         return NodeImage(id=image['distro_code'],
-            name=image['distro_description'],
-            driver=self.connection.driver)
+                         name=image['distro_description'],
+                         driver=self.connection.driver)
 
     def list_sizes(self, location=None):
         # Returns a list of sizes (aka plans)
         # Get plans. Note this is really just for libcloud.
         # We are happy with any size.
-        if location == None:
-            location = '';
+        if location is None:
+            location = ''
         else:
             location = ";dc_location=%s" % (location.id)
 
-        res = self.connection.request('/pricing-plans;server-type=VPS%s' % (location)).object
-        return map(lambda x : self._to_size(x), res['pricing_plan_infos'])
+        res = self.connection.request(
+            '/pricing-plans;server-type=VPS%s' % (location)).object
+        return list(map(lambda x: self._to_size(x), res['pricing_plan_infos']))
 
     def list_nodes(self):
         # Returns a list of Nodes
         # Will only include active ones.
         res = self.connection.request('/orders;include_inactive=N').object
-        return map(lambda x : self._to_node(x), res['about_orders'])
+        return list(map(lambda x: self._to_node(x), res['about_orders']))
 
     def list_images(self, location=None):
         # Get all base images.
         # TODO: add other image sources. (Such as a backup of a VPS)
         # All Images are available for use at all locations
         res = self.connection.request('/distributions').object
-        return map(lambda x : self._to_image(x), res['distro_infos'])
+        return list(map(lambda x: self._to_image(x), res['distro_infos']))
 
     def reboot_node(self, node):
         # Reboot
         # PUT the state of RESTARTING to restart a VPS.
         # All data is encoded as JSON
-        data = {'reboot_request':{'running_state':'RESTARTING'}}
-        uri = self._order_uri(node,'vps/running-state')
-        self.connection.request(uri,data=json.dumps(data),method='PUT')
+        data = {'reboot_request': {'running_state': 'RESTARTING'}}
+        uri = self._order_uri(node, 'vps/running-state')
+        self.connection.request(uri, data=json.dumps(data), method='PUT')
         # XXX check that the response was actually successful
         return True
 
     def destroy_node(self, node):
         # Shutdown a VPS.
-        uri = self._order_uri(node,'vps')
-        self.connection.request(uri,method='DELETE')
+        uri = self._order_uri(node, 'vps')
+        self.connection.request(uri, method='DELETE')
         # XXX check that the response was actually successful
         return True
 
     def create_node(self, **kwargs):
         """Creates a RimuHosting instance
 
-        See L{NodeDriver.create_node} for more keyword args.
+        @inherits: :class:`NodeDriver.create_node`
 
-        @keyword    name: Must be a FQDN. e.g example.com.
-        @type       name: C{string}
+        :keyword    name: Must be a FQDN. e.g example.com.
+        :type       name: ``str``
 
-        @keyword    ex_billing_oid: If not set, a billing method is automatically picked.
-        @type       ex_billing_oid: C{string}
+        :keyword    ex_billing_oid: If not set,
+                                    a billing method is automatically picked.
+        :type       ex_billing_oid: ``str``
 
-        @keyword    ex_host_server_oid: The host server to set the VPS up on.
-        @type       ex_host_server_oid: C{string}
+        :keyword    ex_host_server_oid: The host server to set the VPS up on.
+        :type       ex_host_server_oid: ``str``
 
-        @keyword    ex_vps_order_oid_to_clone: Clone another VPS to use as the image for the new VPS.
-        @type       ex_vps_order_oid_to_clone: C{string}
+        :keyword    ex_vps_order_oid_to_clone: Clone another VPS to use as
+                                                the image for the new VPS.
+        :type       ex_vps_order_oid_to_clone: ``str``
 
-        @keyword    ex_num_ips: Number of IPs to allocate. Defaults to 1.
-        @type       ex_num_ips: C{int}
+        :keyword    ex_num_ips: Number of IPs to allocate. Defaults to 1.
+        :type       ex_num_ips: ``int``
 
-        @keyword    ex_extra_ip_reason: Reason for needing the extra IPs.
-        @type       ex_extra_ip_reason: C{string}
+        :keyword    ex_extra_ip_reason: Reason for needing the extra IPs.
+        :type       ex_extra_ip_reason: ``str``
 
-        @keyword    ex_memory_mb: Memory to allocate to the VPS.
-        @type       ex_memory_mb: C{int}
+        :keyword    ex_memory_mb: Memory to allocate to the VPS.
+        :type       ex_memory_mb: ``int``
 
-        @keyword    ex_disk_space_mb: Diskspace to allocate to the VPS. Defaults to 4096 (4GB).
-        @type       ex_disk_space_mb: C{int}
+        :keyword    ex_disk_space_mb: Diskspace to allocate to the VPS.
+            Defaults to 4096 (4GB).
+        :type       ex_disk_space_mb: ``int``
 
-        @keyword    ex_disk_space_2_mb: Secondary disk size allocation. Disabled by default.
-        @type       ex_disk_space_2_mb: C{int}
+        :keyword    ex_disk_space_2_mb: Secondary disk size allocation.
+                                        Disabled by default.
+        :type       ex_disk_space_2_mb: ``int``
 
-        @keyword    ex_control_panel: Control panel to install on the VPS.
-        @type       ex_control_panel: C{string}
+        :keyword    ex_control_panel: Control panel to install on the VPS.
+        :type       ex_control_panel: ``str``
         """
         # Note we don't do much error checking in this because we
         # expect the API to error out if there is a problem.
@@ -241,62 +287,66 @@ class RimuHostingNodeDriver(NodeDriver):
         size = kwargs['size']
 
         data = {
-            'instantiation_options':{
+            'instantiation_options': {
                 'domain_name': name, 'distro': image.id
             },
             'pricing_plan_code': size.id,
         }
 
-        if kwargs.has_key('ex_control_panel'):
-            data['instantiation_options']['control_panel'] = kwargs['ex_control_panel']
+        if 'ex_control_panel' in kwargs:
+            data['instantiation_options']['control_panel'] = \
+                kwargs['ex_control_panel']
 
-        if kwargs.has_key('auth'):
-            auth = kwargs['auth']
-            if not isinstance(auth, NodeAuthPassword):
-                raise ValueError('auth must be of NodeAuthPassword type')
-            data['instantiation_options']['password'] = auth.password
+        auth = self._get_and_check_auth(kwargs.get('auth'))
+        data['instantiation_options']['password'] = auth.password
 
-        if kwargs.has_key('ex_billing_oid'):
+        if 'ex_billing_oid' in kwargs:
             #TODO check for valid oid.
             data['billing_oid'] = kwargs['ex_billing_oid']
 
-        if kwargs.has_key('ex_host_server_oid'):
+        if 'ex_host_server_oid' in kwargs:
             data['host_server_oid'] = kwargs['ex_host_server_oid']
 
-        if kwargs.has_key('ex_vps_order_oid_to_clone'):
-            data['vps_order_oid_to_clone'] = kwargs['ex_vps_order_oid_to_clone']
+        if 'ex_vps_order_oid_to_clone' in kwargs:
+            data['vps_order_oid_to_clone'] = \
+                kwargs['ex_vps_order_oid_to_clone']
 
-        if kwargs.has_key('ex_num_ips') and int(kwargs['ex_num_ips']) > 1:
-            if not kwargs.has_key('ex_extra_ip_reason'):
-                raise RimuHostingException('Need an reason for having an extra IP')
+        if 'ex_num_ips' in kwargs and int(kwargs['ex_num_ips']) > 1:
+            if not 'ex_extra_ip_reason' in kwargs:
+                raise RimuHostingException(
+                    'Need an reason for having an extra IP')
             else:
-                if not data.has_key('ip_request'):
+                if not 'ip_request' in data:
                     data['ip_request'] = {}
                 data['ip_request']['num_ips'] = int(kwargs['ex_num_ips'])
-                data['ip_request']['extra_ip_reason'] = kwargs['ex_extra_ip_reason']
+                data['ip_request']['extra_ip_reason'] = \
+                    kwargs['ex_extra_ip_reason']
 
-        if kwargs.has_key('ex_memory_mb'):
-            if not data.has_key('vps_parameters'):
+        if 'ex_memory_mb' in kwargs:
+            if not 'vps_parameters' in data:
                 data['vps_parameters'] = {}
             data['vps_parameters']['memory_mb'] = kwargs['ex_memory_mb']
 
-        if kwargs.has_key('ex_disk_space_mb'):
-            if not data.has_key('ex_vps_parameters'):
+        if 'ex_disk_space_mb' in kwargs:
+            if not 'ex_vps_parameters' in data:
                 data['vps_parameters'] = {}
-            data['vps_parameters']['disk_space_mb'] = kwargs['ex_disk_space_mb']
+            data['vps_parameters']['disk_space_mb'] = \
+                kwargs['ex_disk_space_mb']
 
-        if kwargs.has_key('ex_disk_space_2_mb'):
-            if not data.has_key('vps_parameters'):
+        if 'ex_disk_space_2_mb' in kwargs:
+            if not 'vps_parameters' in data:
                 data['vps_parameters'] = {}
-            data['vps_parameters']['disk_space_2_mb'] = kwargs['ex_disk_space_2_mb']
+            data['vps_parameters']['disk_space_2_mb'] =\
+                kwargs['ex_disk_space_2_mb']
 
         res = self.connection.request(
             '/orders/new-vps',
             method='POST',
-            data=json.dumps({"new-vps":data})
+            data=json.dumps({"new-vps": data})
         ).object
         node = self._to_node(res['about_order'])
-        node.extra['password'] = res['new_order_request']['instantiation_options']['password']
+        node.extra['password'] = \
+            res['new_order_request']['instantiation_options']['password']
         return node
 
     def list_locations(self):
@@ -306,5 +356,3 @@ class RimuHostingNodeDriver(NodeDriver):
             NodeLocation('DCLONDON', "RimuHosting London", 'GB', self),
             NodeLocation('DCSYDNEY', "RimuHosting Sydney", 'AU', self),
         ]
-
-    features = {"create_node": ["password"]}

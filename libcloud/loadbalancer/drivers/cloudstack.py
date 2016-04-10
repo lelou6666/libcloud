@@ -13,17 +13,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from libcloud.common.cloudstack import CloudStackConnection, \
-                                       CloudStackDriverMixIn
+from libcloud.common.cloudstack import CloudStackDriverMixIn
 from libcloud.loadbalancer.base import LoadBalancer, Member, Driver, Algorithm
 from libcloud.loadbalancer.base import DEFAULT_ALGORITHM
-from libcloud.loadbalancer.types import State, LibcloudLBImmutableError
-from libcloud.utils import reverse_dict
+from libcloud.loadbalancer.types import Provider
+from libcloud.loadbalancer.types import State
+from libcloud.utils.misc import reverse_dict
+
 
 class CloudStackLBDriver(CloudStackDriverMixIn, Driver):
     """Driver for CloudStack load balancers."""
 
     api_name = 'cloudstack_lb'
+    name = 'CloudStack'
+    website = 'http://cloudstack.org/'
+    type = Provider.CLOUDSTACK
 
     _VALUE_TO_ALGORITHM_MAP = {
         'roundrobin': Algorithm.ROUND_ROBIN,
@@ -35,9 +39,35 @@ class CloudStackLBDriver(CloudStackDriverMixIn, Driver):
         'Active': State.RUNNING,
     }
 
+    def __init__(self, key, secret=None, secure=True, host=None,
+                 path=None, port=None, *args, **kwargs):
+        """
+        @inherits: :class:`Driver.__init__`
+        """
+        host = host if host else self.host
+        path = path if path else self.path
+
+        if path is not None:
+            self.path = path
+
+        if host is not None:
+            self.host = host
+
+        if (self.type == Provider.CLOUDSTACK) and (not host or not path):
+            raise Exception('When instantiating CloudStack driver directly ' +
+                            'you also need to provide host and path argument')
+
+        super(CloudStackLBDriver, self).__init__(key=key, secret=secret,
+                                                 secure=secure,
+                                                 host=host, port=port)
+
     def list_protocols(self):
-        """We don't actually have any protocol awareness beyond TCP."""
-        return [ 'tcp' ]
+        """
+        We don't actually have any protocol awareness beyond TCP.
+
+        :rtype: ``list`` of ``str``
+        """
+        return ['tcp']
 
     def list_balancers(self):
         balancers = self._sync_request('listLoadBalancerRules')
@@ -54,6 +84,15 @@ class CloudStackLBDriver(CloudStackDriverMixIn, Driver):
     def create_balancer(self, name, members, protocol='http', port=80,
                         algorithm=DEFAULT_ALGORITHM, location=None,
                         private_port=None):
+        """
+        @inherits: :class:`Driver.create_balancer`
+
+        :param location: Location
+        :type  location: :class:`NodeLocation`
+
+        :param private_port: Private port
+        :type  private_port: ``int``
+        """
         if location is None:
             locations = self._sync_request('listZones')
             location = locations['zone'][0]['id']
@@ -65,7 +104,8 @@ class CloudStackLBDriver(CloudStackDriverMixIn, Driver):
         result = self._async_request('associateIpAddress', zoneid=location)
         public_ip = result['ipaddress']
 
-        result = self._sync_request('createLoadBalancerRule',
+        result = self._sync_request(
+            'createLoadBalancerRule',
             algorithm=self._ALGORITHM_TO_VALUE_MAP[algorithm],
             name=name,
             privateport=private_port,
@@ -100,7 +140,8 @@ class CloudStackLBDriver(CloudStackDriverMixIn, Driver):
         members = self._sync_request('listLoadBalancerRuleInstances',
                                      id=balancer.id)
         members = members['loadbalancerruleinstance']
-        return [self._to_member(m, balancer.ex_private_port) for m in members]
+        return [self._to_member(m, balancer.ex_private_port, balancer)
+                for m in members]
 
     def _to_balancer(self, obj):
         balancer = LoadBalancer(
@@ -115,9 +156,10 @@ class CloudStackLBDriver(CloudStackDriverMixIn, Driver):
         balancer.ex_public_ip_id = obj['publicipid']
         return balancer
 
-    def _to_member(self, obj, port):
+    def _to_member(self, obj, port, balancer):
         return Member(
             id=obj['id'],
             ip=obj['nic'][0]['ipaddress'],
-            port=port
+            port=port,
+            balancer=balancer
         )
